@@ -192,7 +192,11 @@ a{color:var(--turf)}
 .breaking .bmeta{display:block;font-size:12.5px;color:var(--band-muted)}
 .breaking .bmove{display:block;font-size:14px;color:var(--eye);font-weight:600}
 .dots{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
-.receipts.xr{margin-top:10px}
+.rpair{display:grid}
+.rpair .receipts{margin:0;grid-template-columns:150px repeat(3,minmax(0,1fr)) auto}
+.rpair .receipts:has(+ .receipts){border-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.rpair .receipts + .receipts{border-top:1px solid rgba(230,162,90,.2);border-top-left-radius:0;border-top-right-radius:0}
+@media (max-width:760px){.rpair .receipts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .xlegs .xleg{display:block;font-size:14px;line-height:1.5}
 .xlegs .xleg.miss{opacity:.75}
 .xlegs .xleg b{display:inline-block;width:1.1em}
@@ -793,7 +797,7 @@ function xStats(){
   const legs=done.flatMap(i=>(i.legs||[]).filter(l=>l.result==='win'||l.result==='loss'));
   const wl=a=>[a.filter(i=>i.result==='win').length,a.filter(i=>i.result==='loss').length], wp=legs.filter(l=>l.p!=null);
   return {I,done,all:wl(done),slips:wl(done.filter(i=>(i.legs||[]).length>1)),howls:wl(done.filter(i=>i.kind==='howl')),
-    legs:legs.length,hit:legs.filter(l=>l.result==='win').length,exp:wp.length?wp.reduce((a,l)=>a+l.p,0)/wp.length:null,pending:I.length-done.length};
+    won:done.filter(i=>i.result==='win').length,n:done.length,legs:legs.length,hit:legs.filter(l=>l.result==='win').length,exp:wp.length?wp.reduce((a,l)=>a+l.p,0)/wp.length:null,pending:I.length-done.length};
 }
 function xLeg(l){
   const m=l.result==='win'?'✓':l.result==='loss'?'✗':l.result==='push'?'–':'·', c=l.result==='win'?'good':l.result==='loss'?'bad':'';
@@ -802,14 +806,13 @@ function xLeg(l){
 function xpostsView(){
   const X=xStats(); if(!X.I.length) return '';
   const rec=([w,l])=>`${w}–${l}`, rows=X.I.slice().reverse();
-  return `<section><h2 class="sheet-title">Posted on X</h2><p class="lede">Every pick posted on <a href="${XURL}" target="_blank" rel="noopener">@CoyotesCalls</a>, graded the same way as the model: set before kickoff, graded from final scores and official stats, misses included. Safest Slips and Biggest Howls are the hub's picks; personal picks are our own plays, built with the hub.</p></section>
+  return `<section><h2 class="sheet-title">Slips Posted to X</h2><p class="lede">Every slip posted on <a href="${XURL}" target="_blank" rel="noopener">@CoyotesCalls</a>, graded the same way as the model: set before kickoff, graded from final scores and official stats, misses included. Safest Slips and Biggest Howls are the hub's picks; personal picks are our own plays, built with the hub.</p></section>
   <section class="tiles">
-   <div class="tile"><span class="k">Every post</span><span class="v">${rec(X.all)}</span><span class="k">${X.pending?`${X.pending} pending`:'All graded'}</span></div>
-   <div class="tile"><span class="k">Slips</span><span class="v">${rec(X.slips)}</span><span class="k">Every leg has to hit</span></div>
+   <div class="tile"><span class="k">Posted slips</span><span class="v">${X.won} for ${X.n}</span><span class="k">${X.pending?`${X.pending} pending · `:''}every leg has to hit</span></div>
    <div class="tile"><span class="k">Legs hit</span><span class="v">${X.hit} of ${X.legs}</span><span class="k">${X.legs?pct(X.hit/X.legs,0)+' hit':''}${X.exp!=null?` · sims expected ${pct(X.exp,0)}`:''}</span></div>
-   <div class="tile"><span class="k">Biggest Howls</span><span class="v">${rec(X.howls)}</span><span class="k">Single picks</span></div>
+   <div class="tile"><span class="k">Biggest Howls</span><span class="v">${X.howls[0]} for ${X.howls[0]+X.howls[1]}</span><span class="k">Single-pick slips</span></div>
   </section>
-  <section class="sheet"><h3>Every post</h3><div class="tbox" style="max-height:none"><table><thead><tr><th>Date</th><th>Post</th><th>Legs</th><th class="r">Sims gave it</th><th>Result</th></tr></thead><tbody>
+  <section class="sheet"><h3>Every slip</h3><div class="tbox" style="max-height:none"><table><thead><tr><th>Date</th><th>Post</th><th>Legs</th><th class="r">Sims gave it</th><th>Result</th></tr></thead><tbody>
    ${rows.map(i=>`<tr><td>${esc(newsDate(i.posted))}</td><td><b>${esc(i.title)}</b><br><span class="note">${esc(XKIND[i.kind]||'')}${i.matchup?` · ${esc(i.matchup)}`:''}</span></td>
     <td class="xlegs">${(i.legs||[]).map(xLeg).join('')}</td><td class="r">${pct(i.all,0)}</td>
     <td>${i.result?`<span class="pill ${RES[i.result]?.[0]||''}">${i.result==='win'?'Won':i.result==='loss'?'Lost':esc(RES[i.result]?.[1]||i.result)}</span>${(i.legs||[]).length>1&&i.hits!=null?`<br><span class="note">${i.hits} of ${i.n||i.legs.length} hit</span>`:''}`:'<span class="pill">Pending</span>'}</td></tr>`).join('')}
@@ -819,12 +822,12 @@ function xpostsView(){
 function xReceipts(){
   const X=xStats(); if(!X.done.length) return '';
   const last=X.done.slice(-10), w=i=>i.result==='win'?'Won':'Lost';
-  return `<section class="receipts xr" aria-label="Posted on X">
-   <span class="rk">Posted on X</span>
-   <div><span class="rlabel">Every post, graded</span><span class="rv">${X.all[0]}–${X.all[1]}<small>slips ${X.slips[0]}–${X.slips[1]}</small></span></div>
+  return `<section class="receipts xr" aria-label="Slips posted to X">
+   <span class="rk">Slips posted to X</span>
+   <div><span class="rlabel">Posted slips, graded</span><span class="rv">${X.won} for ${X.n}${X.pending?`<small>${X.pending} pending</small>`:''}</span></div>
    <div class="rdots"><span class="rlabel">Last ${last.length}, oldest to newest</span><div class="dots" role="img" aria-label="${last.map(w).join(', ')}">${last.map(i=>`<i class="${i.result==='win'?'w':'l'}" title="${esc(i.title)}: ${w(i)}"></i>`).join('')}</div></div>
    <div><span class="rlabel">Legs hit</span><span class="rv">${X.legs?pct(X.hit/X.legs,0):'—'}<small>${X.hit} of ${X.legs}${X.exp!=null?` · sims ${pct(X.exp,0)}`:''}</small></span></div>
-   <a class="rlink" href="#posted">Every post</a>
+   <a class="rlink" href="#posted">Every slip</a>
   </section>`;
 }
 /* the receipts: the live record, right on The Prowl */
@@ -1171,8 +1174,7 @@ VIEWS.week=()=>{
   return `<section><p class="kicker">Week ${sl.week} · The Prowl</p><h2 class="sheet-title">Every game, run down 500,000 times</h2>
    <p class="lede">Every game simulated ${(Object.values(S.d.sims||{})[0]?.sims||500000).toLocaleString()} times, play by play, tuned to the betting line. Leans come from a separate score-based team rating that disagrees with the line by 3+ points.</p></section>
    ${breakingStrip()}
-   ${receipts()}
-   ${xReceipts()}
+   <div class="rpair">${receipts()}${xReceipts()}</div>
    ${S.d.recap?.week?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>The Morning After: week ${S.d.recap.week}</h3><a href="#recap">Report card</a></div><p class="note">${esc(recapLine(S.d.recap))}</p></section>`:''}
    ${film?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Featured sim film</h3><a href="#videos">All ${(S.d.videos||[]).length} films</a></div>
     <div class="film">${vBox(film)}
