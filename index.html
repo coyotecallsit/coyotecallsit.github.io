@@ -1692,19 +1692,16 @@ VIEWS.ledger=()=>{
 AFTER.ledger=()=>$$('tr[data-g]').forEach(tr=>tr.addEventListener('click',()=>location.hash=gid2h(tr.dataset.g)));
 
 /* track record */
-const KINDS=[['best','Best value','The top picks by return per $1 each morning, logged only at break-even or better'],['safest','Safest','Top 10 most likely to hit'],['lean','Model leans','Rating gap of 3+ points vs the spread'],
- ['look','Prop looks (stand-in lines)','Graded at the stand-in line until Nov 7, 2026, when real market lines replaced it'],['mlook','Prop looks vs market','Graded at the consensus market line (median across sportsbooks), from Nov 7, 2026'],['smash','All Out Ambush','Due players at their recent-form line; due offenses at the market team total'],['pack','Pack Hunt','Same-game pairs that clear the hunt bar ($1.06+ per $1), one per player, paid at a 2-pick 3x'],['gut','Gut calls','Your own reads, logged before kickoff. No weight in the math until 50+ calls beat the line'],['hunch','News hunches','Soft news (motivation, turmoil, revenge) logged with no weight until it proves out']];
+const KINDS=[['best','Best value','The top picks by return per $1 each morning, logged only at break-even or better'],['safest','Safest','Top 10 most likely to hit'],['lean','Model leans',''],
+ ['mlook','Prop looks vs market',''],['smash','All Out Ambush','Due players at their recent-form line; due offenses at the market team total'],['pack','Pack Hunt','Same-game pairs that clear the hunt bar ($1.06+ per $1), one per player, paid at a 2-pick 3x']];
 const RES={win:['good','Hit'],loss:['bad','Miss'],push:['','Push'],void:['','Void']};
 function recordView(){
   const R=S.d.record; if(!R) return '<div class="empty">The track record has not been built yet.</div>';
   const L=R.live||{}, bt=S.d.backtest?.summary, lb=R.looks_backtest, cal=R.calibration;
   const b3=bt?.spread?.find(x=>x.threshold===3);
-  const ep=R.epoch?.start||'', all=Object.values(S.d.picklog||{}).filter(r=>r.kind!=='screen');
-  const log=all.filter(r=>(r.kickoff||'')>=ep), oldLog=Object.values(S.d.picklog||{}).filter(r=>ep&&(r.kickoff||'')<ep&&r.result);
+  const ep=R.epoch?.start||'', all=Object.values(S.d.picklog||{}).filter(r=>KINDS.some(k=>k[0]===r.kind));
+  const log=all.filter(r=>(r.kickoff||'')>=ep);
   const graded=log.filter(r=>r.result).sort((a,b)=>(b.kickoff||'').localeCompare(a.kickoff||''));
-  const L1=R.live_v1||{}, epDate=ep?newsDate(ep.slice(0,10)):'';
-  const recTable=Lx=>`<div class="tbox" style="max-height:none"><table><thead><tr><th>Category</th><th class="r">Picks</th><th class="r">Record</th><th class="r">Hit rate</th><th class="r">Expected</th><th class="r">Pending</th></tr></thead><tbody>
-   ${[...KINDS,['screen','Your screenshot boards']].filter(([k])=>Lx[k]?.picks).map(([k,l])=>{const x=Lx[k]; return `<tr><td><b>${l}</b></td><td class="r">${x.picks}</td><td class="r">${x.wins}–${x.losses}${x.pushes?`–${x.pushes}`:''}</td><td class="r">${pct(x.hit_rate)}</td><td class="r">${pct(x.expected)}</td><td class="r">${x.pending}</td></tr>`;}).join('')}</tbody></table></div>`;
   const totW=KINDS.reduce((a,[k])=>a+(L[k]?.wins||0),0), totL=KINDS.reduce((a,[k])=>a+(L[k]?.losses||0),0);
   return `<section><h2 class="sheet-title">Track record</h2><p class="lede">Every pick the hub shows is saved each morning and frozen at kickoff, then graded automatically: game picks from final scores, props from the official player stats once they post (usually the next day). Nothing is edited after the fact.</p></section>
   <section class="tiles">
@@ -1715,17 +1712,13 @@ function recordView(){
   </section>
   <section class="sheet"><h3>Live picks log</h3><p class="note">"Expected" is the average chance the hub gave those picks; a well-calibrated model hits close to it.</p>
    <div class="tbox" style="max-height:none"><table><thead><tr><th>Category</th><th class="r">Picks</th><th class="r">Record</th><th class="r">Hit rate</th><th class="r">Expected</th><th class="r">Return per $1</th><th class="r">Pending</th></tr></thead><tbody>
-   ${KINDS.map(([k,l,d])=>{const x=L[k]||{}; return `<tr><td><b>${l}</b><br><span class="note">${d}</span></td><td class="r">${x.picks||0}</td><td class="r">${x.wins||0}–${x.losses||0}${x.pushes?`–${x.pushes}`:''}</td><td class="r">${pct(x.hit_rate)}</td><td class="r">${pct(x.expected)}</td><td class="r ${x.roi>0?'good':x.roi<0?'bad':''}">${x.roi!=null?(x.roi>=0?'+':'−')+'$'+Math.abs(x.roi).toFixed(2):'—'}</td><td class="r">${x.pending||0}</td></tr>`;}).join('')}
+   ${KINDS.map(([k,l,d])=>{const x=L[k]||{}; return `<tr><td><b>${l}</b>${d?`<br><span class="note">${d}</span>`:''}</td><td class="r">${x.picks||0}</td><td class="r">${x.wins||0}–${x.losses||0}${x.pushes?`–${x.pushes}`:''}</td><td class="r">${pct(x.hit_rate)}</td><td class="r">${pct(x.expected)}</td><td class="r ${x.roi>0?'good':x.roi<0?'bad':''}">${x.roi!=null?(x.roi>=0?'+':'−')+'$'+Math.abs(x.roi).toFixed(2):'—'}</td><td class="r">${x.pending||0}</td></tr>`;}).join('')}
    </tbody></table></div>
    <p class="note">Return per $1 counts only picks with a known price: market odds, prices from your screenshots, or Pack Hunt pairs at a 2-pick 3x. Props are judged by hit rate against the 57.7% a 2-pick entry needs.</p></section>
   <section class="sheet"><h3>Graded picks</h3>${graded.length?`<div class="tbox"><table><thead><tr><th>Week</th><th>Game</th><th>Category</th><th>Pick</th><th class="r">Chance</th><th>Result</th></tr></thead><tbody>
    ${graded.slice(0,150).map(r=>`<tr><td>${r.week??''}</td><td>${esc(r.matchup)}</td><td>${esc((KINDS.find(k=>k[0]===r.kind)||[,r.kind])[1])}</td><td>${esc(r.label)}</td><td class="r">${pct(r.p)}</td><td><span class="pill ${RES[r.result]?.[0]||''}">${RES[r.result]?.[1]||esc(r.result)}</span></td></tr>`).join('')}</tbody></table></div>`
    :'<p class="note">Nothing graded yet. Thursday night’s picks are graded in the next morning’s update; props once the player stats post.</p>'}
    <p class="note">${log.filter(r=>!r.result).length} picks waiting on results.</p></section>
-  ${oldLog.length?`<section class="sheet"><h3>${(R.versions||[]).length>2?'Earlier versions':`Version ${esc(R.versions?.at(-2)?.version||'1.0.0')} picks`}</h3><p class="note">Picks from earlier versions of the model, graded and kept as they were. They do not count toward the record above. What changed is under Model updates in How it works.</p>
-   ${recTable(L1)}
-   <div class="tbox"><table><thead><tr><th>Week</th><th>Game</th><th>Category</th><th>Pick</th><th class="r">Chance</th><th>Result</th></tr></thead><tbody>
-   ${oldLog.sort((a,b)=>(b.kickoff||'').localeCompare(a.kickoff||'')).map(r=>`<tr><td>${r.week??''}</td><td>${esc(r.matchup)}</td><td>${esc((KINDS.find(k=>k[0]===r.kind)||[,r.kind==='screen'?'Screenshot':r.kind])[1])}</td><td>${esc(r.label)}</td><td class="r">${pct(r.p)}</td><td><span class="pill ${RES[r.result]?.[0]||''}">${RES[r.result]?.[1]||esc(r.result)}</span></td></tr>`).join('')}</tbody></table></div></section>`:''}
   <section class="grid2">
    <div class="sheet"><h3>Backtest: rating leans</h3><p class="note">Every game this season, re-run week by week using only earlier results, against the closing spread.</p>
    ${bt?`<div class="tbox" style="max-height:none"><table><thead><tr><th>Gap vs line</th><th class="r">Picks</th><th class="r">Record</th><th class="r">Win rate</th></tr></thead><tbody>${bt.spread.map(r=>`<tr><td>Spread ${r.threshold}+ pts</td><td class="r">${r.picks}</td><td class="r">${r.wins}–${r.losses}</td><td class="r ${r.win_pct>=0.524?'good':'bad'}">${pct(r.win_pct)}</td></tr>`).join('')}${bt.total.map(r=>`<tr><td>Total ${r.threshold}+ pts</td><td class="r">${r.picks}</td><td class="r">${r.wins}–${r.losses}</td><td class="r ${r.win_pct>=0.524?'good':'bad'}">${pct(r.win_pct)}</td></tr>`).join('')}</tbody></table></div>`:''}
@@ -1754,14 +1747,14 @@ function coyoteSheet(){
     ${row('Division dog','div_dog',v=>`+${Math.abs(v).toFixed(1)}`)}
     ${row('New coach','new_coach',v=>`+${Math.abs(v).toFixed(1)}`)}
    </tbody></table></div>
-   <p class="note">Wind takes ${Math.abs(Z.wind||0).toFixed(1)} point off the total when it applies. Division underdogs fell just short of 52.4%, and new head coaches (first 3 games after a mid-season change) have too few games to trust yet. Also tested over 27 seasons and left out because the market already prices them: hot and cold streaks, covering 3 straight, revenge games, rest after a bye, Thursday underdogs.${N.proven?.gut?' Your gut calls have earned weight: 1 point toward each call.':''}${N.proven?.hunch?' News hunches have earned weight: 1 point each.':''}</p></div>
+   <p class="note">Wind takes ${Math.abs(Z.wind||0).toFixed(1)} point off the total when it applies. Division underdogs fell just short of 52.4%, and new head coaches (first 3 games after a mid-season change) have too few games to trust yet. Also tested over 27 seasons and left out because the market already prices them: hot and cold streaks, covering 3 straight, revenge games, rest after a bye, Thursday underdogs.</p></div>
   <div class="sheet"><h3>4 · News and context</h3><p>Player projections know who is throwing and who is missing. Past games are re-scaled for the QB’s passing efficiency and for teammates who sat out, then projected to this week: a backup QB starting, a WR1 or RB1 out (his targets and carries go to the rest of the offense), or a star coming back (the games he missed count for less). Injury reports, the weekly roster and the morning news search say who plays.</p>
    ${(R=>R?`<p>Projections also blend in last season, counted as a few games so it fades as this season's sample grows: ${['passing_yards','receiving_yards','receptions','rushing_yards'].filter(s=>R.report[s]).map(s=>`${{passing_yards:'pass yards',receiving_yards:'receiving yards',receptions:'receptions',rushing_yards:'rush yards'}[s]} ${R.report[s].k} games`).join(', ')}. Tested on ${R.test_season} games it never saw, it cut the average miss by ${R.report.receiving_yards?.better_pct}% for receiving yards and ${R.report.passing_yards?.better_pct}% for pass yards, and by ${R.report.receiving_yards?.big_better_pct}% and ${R.report.passing_yards?.big_better_pct}% where this season and last disagree by 25% or more.</p>`:'')(S.d.model_notes?.prior)}
    <p class="note">When the context moved a projection 5% or more, how often the result landed on the side it pointed to:</p>
    <div class="tbox" style="max-height:none"><table><thead><tr><th>Stat</th><th class="r">Games</th><th class="r">Right way</th></tr></thead><tbody>
     ${pr('Carries',B.carries)}${pr('Rushing yards',B.rushing_yards)}${pr('Receptions',B.receptions)}${pr('Receiving yards',B.receiving_yards)}
    </tbody></table></div>
-   <p class="note">Fit on ${esc(B.fit_seasons||'')}, tested on ${esc(B.test_seasons||'')}. With a new starting QB, receivers average ${B.qb_change?Math.round((B.qb_change.rec_yards-1)*100):'—'}% receiving yards; with a key pass catcher out, the others gain about ${B.teammate_out?Math.round((B.teammate_out.rec_yards-1)*100):'—'}%. Soft news (motivation, turmoil, revenge) and your gut calls are logged and graded on the Track record tab and get no weight until they prove out over 50+ picks.</p></div>`;
+   <p class="note">Fit on ${esc(B.fit_seasons||'')}, tested on ${esc(B.test_seasons||'')}. With a new starting QB, receivers average ${B.qb_change?Math.round((B.qb_change.rec_yards-1)*100):'—'}% receiving yards; with a key pass catcher out, the others gain about ${B.teammate_out?Math.round((B.teammate_out.rec_yards-1)*100):'—'}%.</p></div>`;
 }
 VIEWS.model=()=>{
   const m=S.d.meta||{};
