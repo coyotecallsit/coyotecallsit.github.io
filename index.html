@@ -1383,7 +1383,7 @@ function shopSide(row,side){
 function shopGames(){ const now=new Date().toISOString(); return Object.values(S.d.lineshop?.games||{}).filter(G=>G.starts&&G.starts>now).sort((a,b)=>a.starts.localeCompare(b.starts)); }
 VIEWS.shop=()=>{
   const head=`<section><p class="kicker">Line Shop</p><h2 class="sheet-title">Every book’s price, side by side</h2>
-   <p class="lede">The best price on each side, the consensus, the move since the open, and where a book pays more than the hub’s own chance says it should. Prices move fast: check the book before you bet.</p></section>`;
+   <p class="lede">The best price on each side, the consensus, and where a book pays more than the hub’s own chance says it should. Prices move fast: check the book before you bet.</p></section>`;
   const games=shopGames(), D=S.d.lineshop;
   if(!games.length) return head+'<div class="empty">No prices yet. The Line Shop fills in on the next update that pulls market lines for a game that has not kicked off.</div>';
   const G=games.find(g=>g.game_id===S.shopGame)||games[0]; S.shopGame=G.game_id;
@@ -1396,19 +1396,16 @@ VIEWS.shop=()=>{
   const pair=row=>{ const A=shopSide(row,'a'), B=shopSide(row,'b'); if(S.shopVal&&!(A.vals+B.vals)) return '';
     nRows++; nVal+=A.vals+B.vals;
     const what=row.k==='ou'?`<b>${esc(row.player)}</b>${row.team?` <span class="muted">${esc(row.team)}</span>`:''}<br><span class="muted">${esc(row.label||row.stat)}</span>`:`<b>${kindName[row.k]}</b>`;
-    const move=(sd,side)=>{ const s=row[side]; if(row.k==='ml') return s.o!=null&&s.c!=null?`${shopOdds(s.o)} → <b>${shopOdds(s.c)}</b>`:'—';
-      if(s.open==null||sd.cons==null) return '—'; const d=sd.cons-s.open;
-      return `${shopNum(row.k,side,s.open).replace(/^[ou]/,'')} → <b>${shopNum(row.k,side,sd.cons).replace(/^[ou]/,'')}</b><br><small class="muted">${d===0?'no move':sgn(d)+(row.k==='ou'?'':' pts')}</small>`; };
     const consCell=(sd,side)=>{ const nv=row.nv==null?null:side==='a'?row.nv:1-row.nv;
       return `${row.k==='ml'?shopOdds(row[side].c):`<b>${shopNum(row.k,side,sd.cons)}</b>`}<br><small class="muted">${nv==null?'':pct(nv)+' no-vig'}</small>`; };
     const line=(sd,side,first)=>{ sd.cells.forEach(c=>c.row=row); const b=sd.best[0], h=sd.hub, bv=sd.best.some(c=>c.val);
       return `<tr class="${first?'a':'b'}"><th scope="row" class="mk">${first?what+(row.k==='ou'?' · ':'<br>'):''}<span class="${first?'':'sub'}">${esc(sideName[row.k][first?0:1])}</span></th>
        <td class="r">${b?`<span class="px best${bv?' val':''}">${b.L!=null?`<small>${shopNum(row.k,side,b.L)}</small>`:''}<b>${shopOdds(b.o)}${bv?'<i aria-label="beats the hub’s fair odds">▲</i>':''}</b></span><br><small class="muted">${esc(bname[b.bk]||b.bk)}${sd.best.length>1?` +${sd.best.length-1}`:''}</small>`:'<span class="muted">—</span>'}</td>
        <td class="r">${h?`<b>${pct(h.p)}</b><br><small class="muted">fair ${amer(h.q)}${row.k==='ou'&&row.hub[0]!==row.line?` at ${row.hub[0]}`:''}</small>`:'<span class="muted">—</span>'}</td>
-       <td class="r">${consCell(sd,side)}</td><td class="r">${move(sd,side)}</td>
+       <td class="r">${consCell(sd,side)}</td>
        ${books.map(([id])=>cell(sd.by[id],row.k,side)).join('')}</tr>`; };
     return line(A,'a',true)+line(B,'b',false); };
-  const grp=t=>`<tr class="grp"><td colspan="${5+books.length}">${t}</td></tr>`;
+  const grp=t=>`<tr class="grp"><td colspan="${4+books.length}">${t}</td></tr>`;
   const gl=G.game.map(pair).join(''), pr=G.props.slice().sort((x,y)=>(x.team||'').localeCompare(y.team||'')||x.player.localeCompare(y.player)).map(pair).join('');
   const body=(gl?grp('Game lines')+gl:'')+(pr?grp('Player props')+pr:'');
   const priced=G.game.some(r=>r.hub)||G.props.length>0;
@@ -1416,7 +1413,7 @@ VIEWS.shop=()=>{
    <section class="sheet"><div class="controls"><label class="fld">Game<select id="shop-game">${games.map(g=>`<option value="${esc(g.game_id)}"${g===G?' selected':''}>${esc(g.away)} @ ${esc(g.home)} · ${esc(etTime(g.starts))}</option>`).join('')}</select></label>
      <div class="seg" role="group" aria-label="Rows"><button type="button" data-shopval="0" aria-pressed="${!S.shopVal}">All prices</button><button type="button" data-shopval="1" aria-pressed="${!!S.shopVal}">Value only</button></div></div>
     <p class="note">Prices pulled ${esc(etTime(G.pulled))} (${ago(G.pulled)}) · ${books.length} books · ${nRows} markets · <b class="${nVal?'good':''}">${nVal} price${nVal===1?'':'s'} beat the hub’s fair odds</b>${priced?'':' · the hub has not priced this game yet, so there is nothing to flag'}</p>
-    ${body?`<div class="tbox shop"><table><thead><tr><th class="mk">Market</th><th class="r">Best price</th><th class="r">Hub chance</th><th class="r">Consensus</th><th class="r">Open → now</th>${books.map(([,n])=>`<th class="r">${esc(n)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`
+    ${body?`<div class="tbox shop"><table><thead><tr><th class="mk">Market</th><th class="r">Best price</th><th class="r">Hub chance</th><th class="r">Consensus</th>${books.map(([,n])=>`<th class="r">${esc(n)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`
       :`<div class="empty">${S.shopVal?'No price beats the hub’s fair odds in this game right now.':'No prices for this game.'}</div>`}
     <p class="note"><span class="px best"><b>−110</b></span> Best price: the best number first, then the best odds at that number. <span class="px val"><b>−110<i>▲</i></b></span> The book’s price beats the hub’s fair odds for that side. Faded prices sit at a number too far from the consensus to compare (for props under 10, any other number) and are not ranked.</p>
     <p class="note">Hub chance: game lines come from the sims at each posted number; props use the hub’s market-anchored chance at its own market line. A prop at a better number than that line is flagged only when it already beats the fair odds there, and one at a worse number is not judged. Moneylines are never flagged: the sims give underdogs a few points more than moneyline markets do. A flag is a reason to look, not a pick.</p>
