@@ -816,7 +816,6 @@ function slateBoard(){
      <span class="slline">${esc(favLine(g.home,g.away,g.home_fav))} · O/U ${esc(g.total??'—')}</span>
      <span class="slsim">${mid}</span>${tags.length?`<span class="sltags">${tags.join('')}</span>`:''}</a>`; };
   return `<section class="sheet slate" id="sec-slate"><div class="controls" style="justify-content:space-between"><h3>Week ${sl.week} slate</h3><a href="#game">Games &amp; Sims</a></div>
-   <p class="note">Every game by kickoff window, in your time zone. The bar is each team’s win chance in the sims; tap a game for its full breakdown.</p>
    ${W.map(w=>`<div class="slwin" data-win="${sl.week}-${esc(w.key)}" data-done="${!allDone&&w.games.every(g=>g.status==='final')?1:0}"><h4>${esc(w.label)} <small>${esc(w.date)}${w.timeTxt?` · ${esc(w.timeTxt)}`:''}</small></h4>
     <div class="slrows">${w.games.map(row).join('')}</div></div>`).join('')}</section>`;
 }
@@ -1167,7 +1166,6 @@ function shockSection(pick){
   let gs=SH.games.filter(g=>live({kickoff:g.kickoff})); if(pick) gs=gs.filter(g=>g.away===pick||g.home===pick); if(!gs.length) return '';
   const M=SH.model||{};
   return `<section><div class="controls" style="justify-content:space-between;margin-bottom:6px"><h3>News Shock: if they sit</h3><a href="#model">How it's built</a></div>
-   <p class="note" style="margin-bottom:10px">Before the news breaks: how far each line would move if the starting QB sat, and who picks up the work if the top receiver or lead back sits. Sized on how closing lines moved in ${((M.n_fit||0)+(M.n_test||0)).toLocaleString()} games since 2015 where a team's regular starter sat.</p>
    <div class="shkgrid">${gs.map(shockCard).join('')}</div></section>`;
 }
 function shockFor(gid){ const G=(S.d.shock?.games||[]).find(g=>g.game_id===gid); return G?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>News Shock: if they sit</h3><a href="#news">Every game</a></div><div class="shkgrid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))">${G.teams.map(T=>`<div class="shk" style="border:0;padding:0">${shockTeam(T,G)}</div>`).join('')}</div></section>`:''; }
@@ -1509,14 +1507,13 @@ VIEWS.bets=()=>{
   const B=S.d.bestbets; if(!B) return '<div class="empty">Best bets have not been built yet.</div>';
   const games=(S.d.slate?.games||[]).filter(g=>g.status==='upcoming');
   S.projGame=S.projGame&&games.some(g=>g.game_id===S.projGame)?S.projGame:(games[0]?.game_id);
-  return `<section><p class="kicker">Pounce</p><h2 class="sheet-title">Best bets</h2><p class="lede">Every pick the hub can price, ranked two ways. <b>Best value</b> is where the payout beats the chance of hitting. <b>Safest</b> is what hits most often, whatever it pays. Updated ${esc(ago(B.updated))}.</p></section>
+  return `<section><p class="kicker">Pounce</p><h2 class="sheet-title">Best bets</h2></section>
   <section class="sheet"><h3>How to read this</h3><ul class="reasons">
    <li><b>Chance to hit</b>: from the 500,000-game sims for game picks, and from the player’s game log for props.</li>
    <li><b>Needs</b>: the hit rate where the payout breaks even. Props use ${pct(B.power2)} per leg (a 2-pick entry paying 3x); a 6-pick flex entry needs about ${pct(B.flex6)}.</li>
    <li><b>Back per $1</b>: the average return. Over $1.00 means the model thinks the price is good.</li>
    <li>Game picks use market odds, or the prices from a screenshot you sent for that game.</li>
-   <li><b>Market lines</b> on props are the median line across sportsbooks, refreshed every morning and again before kickoff on game days. Next to each one is Coyote Calls' projection and the hub's chance at that exact line.</li>
-   <li>${btLine()}</li></ul>
+   <li><b>Market lines</b> on props are the median line across sportsbooks, refreshed every morning and again before kickoff on game days. Next to each one is Coyote Calls' projection and the hub's chance at that exact line.</li></ul>
    <p class="tierkey"><span>Color key, used on every tab:</span><span class="pill t1">Strongest</span><span class="pill t2">Solid</span><span class="pill t3">Thin</span><span class="pill t4">Below break-even</span></p></section>
   ${howlSection(10)}
   <section><h3 style="margin-bottom:10px">Best value · top ${B.best.filter(live).length}</h3><div class="grid2">${B.best.filter(live).map(betCard).join('')||'<div class="empty">Every ranked pick has kicked off. The next daily update adds new ones.</div>'}</div></section>
@@ -1563,8 +1560,7 @@ VIEWS.week=()=>{
    ${(S.d.pack?.top||[]).filter(live).length?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Pack Hunt: picks that hunt together</h3><a href="#pack">Every hunt</a></div><ol class="reasons">${S.d.pack.top.filter(live).slice(0,3).map(x=>`<li><b>${x.leg_rows.map(l=>`${esc(l.player)} ${l.dir==='more'?'More':'Less'} ${l.line}`).join(' + ')}</b> <span class="note">${esc(x.matchup)} · both hit ${pct(x.joint)} vs ${pct(x.indep)} if unrelated · $${x.value.toFixed(2)} back per $1 at 3x</span></li>`).join('')}</ol></section>`:''}
    <section class="sheet"><h3>Model leans</h3>
    ${leans.length?`<div class="cards">${leans.map(g=>`<a class="lean card-link" href="#${gid2h(g.game_id)}" style="text-decoration:none;color:inherit"><span class="pill ${g.confidence==='strong lean'?'good':'turf'}">${esc(g.confidence)}</span><b>${esc(g.lean)}</b><span class="note">${esc(g.away)} @ ${esc(g.home)} · edge ${Math.abs(g.spread_edge).toFixed(1)} pts</span></a>`).join('')}</div>`
-     :'<p class="note">No game has a 3-point gap between the ratings and the line this week.</p>'}
-   <p class="note">${btLine()}</p></section>
+     :'<p class="note">No game has a 3-point gap between the ratings and the line this week.</p>'}</section>
    ${(S.d.bestbets?.best||[]).filter(c=>!c.kickoff||new Date(c.kickoff)>new Date()).length?`<section class="sheet"><h3>Top value right now</h3><ol class="reasons">${S.d.bestbets.best.filter(c=>!c.kickoff||new Date(c.kickoff)>new Date()).slice(0,3).map(c=>`<li><b>${esc(c.label)}</b> <span class="note">${esc(c.matchup)} · ${pct(c.p)} to hit · ${c.price?'$'+c.value.toFixed(2)+' back per $1':'per-leg value '+c.value.toFixed(2)}</span></li>`).join('')}</ol><a href="#bets">See all best and safest bets</a></section>`:''}
    <section class="cards">${sl.games.map(gameCard).join('')}</section>
    <section class="sheet"><h3>Headlines</h3>${news.length?`<ul class="news">${news.map(newsItem).join('')}</ul>`:'<p class="note">No headlines saved yet. The daily update adds injury and lineup news here.</p>'}
@@ -1661,7 +1657,6 @@ function outView(g){
   const team=([t,l])=>`<div class="outteam"><div class="outhead">${chip(t)}<b>${esc(nick(t))}</b></div>${l.length?`<ul class="outs">${l.map(p=>`<li><span class="pill ${p.status==='Questionable'?'warn':'bad'}">${esc(p.status)}</span><span>${esc(p.name)}${p.pos?` <span class="muted">${esc(p.pos)}</span>`:''}${p.injury?` <span class="muted">· ${esc(p.injury)}</span>`:''}</span></li>`).join('')}</ul>`:'<p class="note">No one listed.</p>'}</div>`;
   return `${L.map(team).join('')}${!any&&g.status==='upcoming'?'<p class="note">Game statuses come out two days before kickoff (Friday for Sunday games).</p>':''}`;
 }
-function btLine(){ const b=S.d.backtest?.summary?.spread?.find(x=>x.threshold===3); return b?`This season, games where the ratings disagreed with the closing line by 3+ points went ${b.wins}–${b.losses} against the spread (${pct(b.win_pct)}). About 52.4% is needed to beat standard −110 pricing. The sample is small.`:''; }
 function newsItem(n){ return `<li><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="note">${esc(n.summary||'')}</span><span class="note">${esc(n.source||'')}${n.date?' · '+esc(newsDate(n.date)):''}</span></li>`; }
 function gameCard(g){
   const s=sim(g.game_id); const v=(S.d.videos||[]).some(x=>x.game_id===g.game_id);
@@ -1712,8 +1707,7 @@ VIEWS.game=()=>{
    <div class="readtake"><h4>The hub’s take</h4>
    <div class="lean">${g.lean?`<span class="pill ${g.confidence==='strong lean'?'good':'turf'}">${esc(g.confidence)}</span><b>${esc(g.lean)}</b>`:'<span class="pill">No edge</span><b>Pass on the side</b>'}
    <span class="note">Ratings: ${esc(favLine(g.home,g.away,g.model_home_fav))}, total ${g.model_total??'—'}</span></div>
-   <ul class="reasons">${(g.reasons||[]).filter(r=>!/^Key players out/.test(r)).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
-   <p class="note">${btLine()} The totals side of the ratings has lost in the backtest, so it never produces a lean.</p></div></section>
+   <ul class="reasons">${(g.reasons||[]).filter(r=>!/^Key players out/.test(r)).map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div></section>
   ${board?boardSheet(board):''}
   ${(S.d.proplooks||[]).some(x=>x.game_id===id)||(S.d.propboard||[]).some(x=>x.game_id===id)?`<section class="sheet"><h3>Best props for this game</h3>${gameProps(id,{title:false})}</section>`:''}
   ${packFor(id)}${shockFor(id)}
@@ -2123,12 +2117,11 @@ VIEWS.news=()=>{
   let pick=''; try{ pick=localStorage.getItem('cc-team')||''; }catch(e){}
   if(pick&&!TEAM[pick]) pick='';
   const opts=DIVS.map(([d,ts])=>`<optgroup label="${d}">${ts.map(c=>`<option value="${c}"${c===pick?' selected':''}>${esc(((S.d.teams||[]).find(t=>t.team===c)||{}).name||TEAM[c]?.[0]||c)}</option>`).join('')}</optgroup>`).join('');
-  return `<section><p class="kicker">The Wire</p><h2 class="sheet-title">News</h2><p class="lede">The top five headlines for every team from the last few days, pulled fresh every morning and again on game days. Tap a headline to read it at the source.${TN.updated?` Updated ${esc(ago(TN.updated))}.`:''}</p></section>
+  return `<section><p class="kicker">The Wire</p><h2 class="sheet-title">News</h2></section>
   <section class="sheet"><div class="controls" style="justify-content:space-between"><label class="fld" style="flex:0 1 360px">Show<select id="nteam"><option value="">All 32 teams</option>${opts}</select></label></div></section>
   ${lg.length&&!pick?`<section class="sheet"><h3>Around the league</h3><ul class="news">${lg.slice(0,8).map(newsItem).join('')}</ul></section>`:''}
   ${shockSection(pick)}
-  ${(pick?[['',[pick]]]:DIVS).map(([d,ts])=>`<section>${d?`<p class="divhead">${d}</p>`:''}<div class="ncards">${ts.map(teamCard).join('')}</div></section>`).join('')}
-  <p class="note">Headlines and sources are the publishers' own and link to the original reporting. Stories from a rival team's site are left out of that team's list.</p>`;
+  ${(pick?[['',[pick]]]:DIVS).map(([d,ts])=>`<section>${d?`<p class="divhead">${d}</p>`:''}<div class="ncards">${ts.map(teamCard).join('')}</div></section>`).join('')}`;
 };
 AFTER.news=()=>{
   $('#nteam')?.addEventListener('change',e=>{ try{ localStorage.setItem('cc-team',e.target.value); }catch(err){} route(); });
@@ -2288,8 +2281,7 @@ VIEWS.model=()=>{
    <div class="sheet"><h3>1 · The game sim</h3><p>A play-by-play simulator (runs, passes, sacks, turnovers, punts, field goals, 4th-down calls, clock management, overtime, return touchdowns). For each game it is tuned until its middle outcome matches the <b>Coyote line</b> (the betting spread and total, plus any tested nudge below), then run 500,000 times. It turns one line into everything else: win chances, any alternate spread or total, team totals, exact scores.</p>
    <p class="note">When no nudge applies, the Coyote line is the market line, so the sim finds no edge on its own; it prices payouts and combos.</p></div>
    ${coyoteSheet()}${packSheet()}${shockSheet()}${marketSheet()}
-   <div class="sheet"><h3>2 · The ratings</h3><p>A separate, independent model: team strength from final scores only (this season, with last season mixed in lightly), with a fitted home-field value of ${m.ratings?.hfa??'—'} points. Where it disagrees with the line by 3+ points, the hub shows a lean, unless a team starts a different quarterback than usual.</p>
-   <p class="note">${btLine()}</p></div>
+   <div class="sheet"><h3>2 · The ratings</h3><p>A separate, independent model: team strength from final scores only (this season, with last season mixed in lightly), with a fitted home-field value of ${m.ratings?.hfa??'—'} points. Where it disagrees with the line by 3+ points, the hub shows a lean, unless a team starts a different quarterback than usual.</p></div>
    <div class="sheet"><h3>Validation of the sim</h3><div class="tbox" style="max-height:none"><table><thead><tr><th>Check</th><th class="r">First version</th><th class="r">Current</th><th class="r">NFL typical</th></tr></thead><tbody>
     <tr><td>Spread of total points (SD)</td><td class="r">11.9</td><td class="r">14.4</td><td class="r">13.5–14</td></tr>
     <tr><td>Spread of margins (SD)</td><td class="r">13.4</td><td class="r">13.6</td><td class="r">13.5–14</td></tr>
