@@ -1704,6 +1704,7 @@ VIEWS.game=()=>{
     <p class="note">Rest: ${esc(g.away)} ${g.away_rest??'—'} days, ${esc(g.home)} ${g.home_rest??'—'} days. Surface: ${esc(g.surface||'unknown')}. Starting QBs: ${esc(g.away_qb||'—')} and ${esc(g.home_qb||'—')}.</p>
     ${(g.injuries||[]).length?`<div class="tbox"><table><thead><tr><th>Player</th><th>Team</th><th>Status</th><th>Injury</th></tr></thead><tbody>${g.injuries.map(i=>`<tr><td>${esc(i.name)} <span class="muted">${esc(i.pos)}</span></td><td>${esc(i.team)}</td><td class="${i.status==='Questionable'?'warn':'bad'}">${esc(i.status)}</td><td>${esc(i.injury||'')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="note">No top-ranked players on the injury report.</p>'}
   </section>
+  ${vid?`<section class="sheet"><h3>Sim video</h3><video controls preload="metadata" playsinline src="${esc(vid.url||vid.file)}#t=6.5"></video><p class="note">The projected final, ${vid.modal.away}–${vid.modal.home}, played out play by play.</p></section>`:''}
   <section class="sheet read"><h3>The read</h3>
    <div class="readgrid">
     <div><h4>Why ${g.home_fav?`the line ${g.status==='final'?'was':'is'} ${esc(favLine(g.home,g.away,g.home_fav))}`:'it’s a pick’em'}</h4><ul class="why">${lineWhy(g,T)}</ul></div>
@@ -1726,7 +1727,6 @@ VIEWS.game=()=>{
   <section class="grid2"><div class="sheet"><h3>Fair payouts</h3><p class="note">What each pick is worth if the sims are right. Take a pick only when the app pays more than the fair number.</p>${fairTable(g,s)}</div>
    <div class="sheet"><h3>Most common final scores</h3>${topScores(g,s)}</div></section>`:''}
   <section class="sheet"><h3>Matchup</h3>${matchupTable(T(g.away),T(g.home),g)}</section>
-  ${vid?`<section class="sheet"><h3>Sim video</h3><video controls preload="metadata" playsinline src="${esc(vid.url||vid.file)}#t=6.5"></video><p class="note">The projected final, ${vid.modal.away}–${vid.modal.home}, played out play by play.</p></section>`:''}
   ${(S.d.news?.items||[]).filter(n=>n.game_id===id).length?`<section class="sheet"><h3>News</h3><ul class="news">${S.d.news.items.filter(n=>n.game_id===id).map(newsItem).join('')}</ul></section>`:''}`;
 };
 AFTER.game=()=>{
