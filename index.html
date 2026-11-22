@@ -1483,7 +1483,6 @@ VIEWS.smash=()=>{
    <div class="tile"><span class="k">Same test, no slump</span><span class="v">${pct(bt?.control?.hit_rate)}</span><span class="k">${bt?`${bt.control.n} player-games for comparison`:''}</span></div>
    <div class="tile"><span class="k">Backtest: due offenses</span><span class="v">${pct(bt?.teams?.hit_rate)}</span><span class="k">${bt?`${bt.teams.hits} of ${bt.teams.n} went over the market team total`:''}</span></div>
   </section>
-  <p class="note">Small samples so far; every flag is also logged and graded on the Track Record tab. The score (0–100) weighs how deep the slump is, how steady the volume stayed, how reliable the player has been, and the next matchup. Ambush spot 70+, Primed 55+, Stalking 40+.</p>
   <section><h3 style="margin-bottom:10px">Players</h3>${P.length?`<div class="smashgrid">${P.map(card).join('')}</div>`:'<div class="empty">No player fits the profile right now. The list refreshes every morning.</div>'}</section>
   <section><h3 style="margin-bottom:10px">Offenses</h3>${T.length?`<div class="smashgrid">${T.map(tcard).join('')}</div>`:'<div class="empty">No offense fits the profile this week.</div>'}</section>`;
 };
