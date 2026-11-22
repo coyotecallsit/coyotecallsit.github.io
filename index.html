@@ -339,6 +339,7 @@ h2.foldhead,h3.foldhead,p.foldhead,header.foldhead,.controls.foldhead{display:fl
 .mkrow{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;font-size:13px;background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px}
 .mkrow b{font-family:var(--display);font-size:16px;letter-spacing:.02em}
 .lookpick{font-size:17px;margin:2px 0 6px}.lookpick b{font-family:var(--display);font-size:20px;letter-spacing:.02em}
+.todaygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.today{text-decoration:none;color:inherit;gap:6px}.today .tname{font-size:18px}.morebtn{margin-top:10px;align-self:flex-start}
 /* combined tabs */
 .jumprow{display:flex;justify-content:flex-end;margin-bottom:-8px}
 .secbreak{border-top:2px solid var(--line);margin-top:8px;scroll-margin-top:var(--hdr,150px)}
@@ -494,6 +495,11 @@ const tchip=t=>TEAM[t]?`<span class="tchip" style="background:${TEAM[t][1]};box-
 /* one pick-strength scale everywhere (Nov 19): 1 green strongest, 2 teal solid, 3 amber thin, 4 red below break-even */
 const TIER={'Strong look':1,'Edge':1,'Ambush spot':1,'Look':2,'Primed':2,'Special line':2,'Lean':3,'Thin edge':3,'Stalking':3,'Below break-even':4};
 const tierCls=t=>TIER[t]?'t'+TIER[t]:'', tierBar=t=>TIER[t]?'tb'+TIER[t]:'';
+/* one strength word everywhere (Nov 22): the model's tags stay as they are in the data */
+const TW={'Strong look':'Strong','Edge':'Strong','Ambush spot':'Strong','Look':'Solid','Primed':'Solid','Special line':'Solid','Lean':'Thin','Thin edge':'Thin','Stalking':'Thin'}, tw=t=>TW[t]||t;
+/* shorter lists (Nov 22): the first few, then a Show all button that keeps the scroll position */
+S.more={}; const showN=(k,a,n)=>S.more[k]?a:a.slice(0,n), moreBtn=(k,a,n,w)=>a.length>n&&!S.more[k]?`<button type="button" class="btn ghost morebtn" data-more="${k}">Show all ${a.length}${w?' '+w:''}</button>`:'';
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-more]'); if(!b) return; const y=window.scrollY; S.more[b.dataset.more]=1; route(); window.scrollTo(0,y); });
 const tintBg=(v,lo,hi,max)=>v==null||v<=lo?'':`background:color-mix(in srgb,var(--good) ${Math.round(Math.min(1,(v-lo)/(hi-lo))*max)}%,var(--surface))`;
 const chip=t=>`<span class="chip" style="background:${TEAM[t]?.[1]||'#333'};color:#fff;box-shadow:inset 0 -3px 0 ${TEAM[t]?.[2]||'#999'}">${esc(t)}</span>`;
 const nick=t=>TEAM[t]?.[0]||t;
@@ -1239,17 +1245,15 @@ function buzzSection(pick){ const P=Object.values(S.d.buzz?.players||{}).filter(
 /* ---------- the biggest howls: where Coyote Calls disagrees with the market most ---------- */
 const howlUnit=s=>/yards/.test(s)?' yds':/receptions/.test(s)?' rec':'';
 function howlRow(h){
-  const up=h.gap>0, tn=h.tag==='Strong look'||h.tag==='Look'?h.tag:'Lean', tg=[tierCls(tn),tn];
-  return `<li class="howlrow ${tierBar(tn)}"><div><b>${esc(h.player)}</b>${injTag(h.player,h.team)} <span class="muted">${tchip(h.team)}${esc(h.pos)} vs ${esc(h.opp||'')} · ${esc(h.label)}</span></div>
-   <div class="howlnums"><span><span class="k">Coyote</span><b>${h.proj}</b></span><span><span class="k">Market</span><b>${h.market_line}</b></span><span><span class="k">Gap</span><b class="${up?'good':'bad'}">${up?'+':''}${h.gap}${howlUnit(h.stat)}</b></span>${h.hub_line!=null?`<span><span class="k">Hub line</span><b>${h.hub_line}</b></span>`:''}
-   <span><span class="k">${h.dir_mkt==='more'?'More':'Less'}</span><b>${pct(h.p_mkt,0)}</b></span><span class="pill ${tg[0]}">${tg[1]}</span>${mvTag(h.player,h.stat,h.dir_mkt)}${buzzTag(h.player,h.team)}${slipBtn({name:h.player,team:h.team,pos:h.pos,gid:h.game_id,stat:h.stat,line:h.market_line,dir:h.dir_mkt})}</div></li>`;
+  const tn=h.tag==='Strong look'||h.tag==='Look'?h.tag:'Lean', more=h.dir_mkt==='more', bk=h.market_p_over!=null?(more?h.market_p_over:1-h.market_p_over):null;
+  return `<li class="lookrow ${tierBar(tn)}"><div class="controls" style="justify-content:space-between"><span><b>${esc(h.player)}</b>${injTag(h.player,h.team)} <span class="muted">${tchip(h.team)}${esc(h.pos)} vs ${esc(h.opp||'')}</span></span><span class="slipwrap"><span class="pill ${tierCls(tn)}">${tw(tn)}</span>${slipBtn({name:h.player,team:h.team,pos:h.pos,gid:h.game_id,stat:h.stat,line:h.market_line,dir:h.dir_mkt})}</span></div>
+   <div class="lookpick"><b>${more?'More':'Less'} ${h.market_line}</b> ${esc(h.label.toLowerCase())} · Coyote <b>${h.proj}</b></div>
+   <div class="mkrow"><span class="muted">Hub ${pct(h.p_mkt,0)}${bk!=null?` · books ${pct(bk,0)}`:''}</span>${mvTag(h.player,h.stat,h.dir_mkt)}${buzzTag(h.player,h.team)}</div></li>`;
 }
 const liveHowls=()=>(S.d.bestbets?.howls||[]).filter(h=>{ const g=slateGame(h.game_id); return !g?.kickoff_utc||new Date(g.kickoff_utc)>new Date(); });
 function howlSection(n){
-  const H=liveHowls().slice(0,n); if(!H.length) return '';
-  return `<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Biggest howls</h3>${n<10?'<a href="#bets">All howls</a>':''}</div>
-   <p class="note">Where Coyote Calls moves furthest off the consensus market. <b>Coyote</b> is our model on its own; the <b>Hub line</b> and the chance mix it with the market, which gets most of the say because it has been sharper on its own (see How it works). ${(A=>A?.strong?`A <b>Strong look</b> beats the market’s own chance for that side by 3+ points (${A.strong.won}–${A.strong.lost} at closing lines this season), a <b>Look</b> by 2–3 (${A.look.won}–${A.look.lost}), and only on kinds of props where Coyote has beaten the books; a <b>Lean</b> is our side without that room or that record.`:'')(S.d.model_notes?.anchor?.summary)}</p>
-   <ul class="howllist">${H.map(howlRow).join('')}</ul></section>`;
+  const A=liveHowls(); if(!A.length) return ''; const H=showN('howl',A,n);
+  return `<section class="sheet"><h3>Biggest howls</h3><ul class="howllist">${H.map(howlRow).join('')}</ul>${moreBtn('howl',A,n,'howls')}</section>`;
 }
 
 /* ---------- Beat the Close ---------- */
@@ -1464,7 +1468,7 @@ VIEWS.smash=()=>{
   const X=S.d.smash; if(!X) return '<div class="empty">All Out Ambush has not run yet.</div>';
   const live=c=>!c.kickoff||new Date(c.kickoff)>new Date(); const P=(X.players||[]).filter(live), T=(X.teams||[]).filter(live), bt=X.backtest;
   const card=(p,i)=>`<div class="smash ${p.tier==='Ambush spot'?'spot':''} ${tierBar(p.tier)}"><div class="top"><div class="gauge" style="--v:${Math.round(p.score)}"><b>${Math.round(p.score)}</b></div>
-    <div class="who"><span class="pill ${tierCls(p.tier)}">${esc(p.tier)}</span><b>${esc(p.player)}</b><span class="note">${tchip(p.team)}${esc(p.pos)} vs ${esc(p.opp)} · ${esc(p.label)}${p.injury?` · ${esc(p.injury.status)}`:''}</span></div></div>
+    <div class="who"><span class="pill ${tierCls(p.tier)}">${esc(tw(p.tier))}</span><b>${esc(p.player)}</b><span class="note">${tchip(p.team)}${esc(p.pos)} vs ${esc(p.opp)} · ${esc(p.label)}${p.injury?` · ${esc(p.injury.status)}`:''}</span></div></div>
     <div class="spark">${sparkSVG(p.series||[],p.base_mean,p.form_line)}</div>
     <p class="note" style="margin-top:-4px">Gold bars: last 3 games. Dashed line: his normal (${p.base_mean}).</p>
     <div class="lines">${p.market_line!=null?`<div><span class="note">Market line</span><b>${p.market_line}</b><span class="note">Hub gives More ${pct(p.hub_p_over_mkt)}${p.market_p_over!=null?` · market ${pct(p.market_p_over,0)}`:''}</span></div>`
@@ -1474,7 +1478,7 @@ VIEWS.smash=()=>{
     <ul class="reasons">${p.reasons.slice(0,2).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
     ${p.reasons.length>2?`<details><summary class="note">More</summary><ul class="reasons">${p.reasons.slice(2).map(r=>`<li>${esc(r)}</li>`).join('')}</ul></details>`:''}<div class="cardfoot" style="gap:8px;flex-wrap:wrap">${slipBtn({name:p.player,team:p.team,pos:p.pos,gid:p.game_id,stat:p.stat,line:p.market_line??p.form_line,dir:'more'})}${checkBtn(p.player,p.stat,p.market_line??p.form_line)}${shareBtn('sp:'+i)}</div></div>`;
   const tcard=(t,i)=>`<div class="smash ${t.tier==='Ambush spot'?'spot':''} ${tierBar(t.tier)}"><div class="top"><div class="gauge" style="--v:${Math.round(t.score)}"><b>${Math.round(t.score)}</b></div>
-    <div class="who"><span class="pill ${tierCls(t.tier)}">${esc(t.tier)}</span><b>${esc(nick(t.team))} offense</b><span class="note">vs ${esc(t.opp)} · team total</span></div></div>
+    <div class="who"><span class="pill ${tierCls(t.tier)}">${esc(tw(t.tier))}</span><b>${esc(nick(t.team))} offense</b><span class="note">vs ${esc(t.opp)} · team total</span></div></div>
     <div class="lines"><div><span class="note">Last 3 games</span><b>${t.recent_ppg} pts</b><span class="note">Normally ${t.base_ppg}</span></div><div><span class="note">Play</span><b>Over ${t.line}</b><span class="note">Market implied ${t.implied}</span></div></div>
     <ul class="reasons">${t.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul><div class="cardfoot">${shareBtn('st:'+i)}</div></div>`;
   return `<section><p class="kicker">All Out Ambush</p><h2 class="sheet-title">Who's due</h2><p class="lede">Reliable players and offenses whose recent results fell short while their opportunity held up: the targets, carries and yards are still there, the payoff isn't yet. Opportunity tends to stick and results tend to catch up, so these are the spots to pounce on. A slump from a lost role never makes the list.</p></section>
@@ -1493,7 +1497,7 @@ const LOOKCLS={'Strong look':'t1','Look':'t2','Lean':'t3'};
 function gameProps(gid,{title=true}={}){
   const g=slateGame(gid); const looks=(S.d.proplooks||[]).find(x=>x.game_id===gid)?.looks||[];
   const lk=l=>{const more=l.direction==='more'; const thr=more?l.more_at:l.less_at;
-    return `<li class="lookrow ${tierBar(l.tag)}"><div class="controls" style="justify-content:space-between"><span><b>${esc(l.player)}</b>${injTag(l.player,l.team)} <span class="muted">${tchip(l.team)}${esc(l.pos)}</span></span><span class="slipwrap">${l.tag?`<span class="pill ${LOOKCLS[l.tag]||''}">${esc(l.tag)}</span>`:''}${slipBtn({name:l.player,team:l.team,pos:l.pos,gid:l.game_id,stat:l.stat,line:l.market_line??l.typical_line,dir:l.market_line!=null?l.dir_mkt:l.direction})}</span></div>
+    return `<li class="lookrow ${tierBar(l.tag)}"><div class="controls" style="justify-content:space-between"><span><b>${esc(l.player)}</b>${injTag(l.player,l.team)} <span class="muted">${tchip(l.team)}${esc(l.pos)}</span></span><span class="slipwrap">${l.tag?`<span class="pill ${LOOKCLS[l.tag]||''}">${esc(tw(l.tag))}</span>`:''}${slipBtn({name:l.player,team:l.team,pos:l.pos,gid:l.game_id,stat:l.stat,line:l.market_line??l.typical_line,dir:l.market_line!=null?l.dir_mkt:l.direction})}</span></div>
      ${(()=>{ const mk=l.market_line!=null, up=mk?l.dir_mkt==='more':more, lab=esc(l.label.toLowerCase().replace('tds','TDs'));
        return `<div class="lookpick"><b>${up?'More':'Less'}${mk?` ${l.market_line}`:''}</b> ${lab} · Coyote <b>${l.proj}</b></div>
        <div class="mkrow"><span class="muted">${mk?`Hub ${pct(l.p_mkt,0)}`:`No market line yet · hub ${pct(l.p_at_avg,0)} at ${l.typical_line}`}</span>${mk&&l.p_mkt>=edgeBar()?'<span class="pill good">Clears 2-pick bar</span>':''}${mk?mvTag(l.player,l.stat,l.dir_mkt):''}${buzzTag(l.player,l.team)}</div>`; })()}
@@ -1503,7 +1507,7 @@ function gameProps(gid,{title=true}={}){
 }
 function betCard(c,i){
   const val=c.value==null?'—':c.price?`$${c.value.toFixed(2)}`:c.value.toFixed(2);
-  return `<div class="sheet ${tierBar(c.tag)}" style="gap:8px;${tintBg(c.value,1,1.15,14)}"><div class="controls" style="justify-content:space-between"><span class="eyebrow">#${i+1} · ${esc(c.matchup)} · ${esc(c.kickoff?kick({kickoff_utc:c.kickoff}):'')}</span><span class="pill ${TAGCLS[c.tag]||''}">${esc(c.tag)}</span></div>
+  return `<div class="sheet ${tierBar(c.tag)}" style="gap:8px;${tintBg(c.value,1,1.15,14)}"><div class="controls" style="justify-content:space-between"><span class="eyebrow">#${i+1} · ${esc(c.matchup)} · ${esc(c.kickoff?kick({kickoff_utc:c.kickoff}):'')}</span><span class="pill ${TAGCLS[c.tag]||''}">${esc(tw(c.tag))}</span></div>
    <div style="font-family:var(--display);font-weight:700;font-size:24px;line-height:1.1">${esc(c.label)}</div>${clvChip(c)?`<div>${clvChip(c)}</div>`:''}
    <div class="tiles"><div class="tile"><span class="k">Chance to hit</span><span class="v">${pct(c.p)}</span></div>
     <div class="tile"><span class="k">Needs</span><span class="v">${pct(c.breakeven)}</span><span class="k">${c.price?`at ${fx(c.price)}`:'per leg, 2-pick entry'}</span></div>
@@ -1517,23 +1521,17 @@ VIEWS.bets=()=>{
   const games=(S.d.slate?.games||[]).filter(g=>g.status==='upcoming');
   S.projGame=S.projGame&&games.some(g=>g.game_id===S.projGame)?S.projGame:(games[0]?.game_id);
   return `<section><p class="kicker">Pounce</p><h2 class="sheet-title">Best bets</h2></section>
-  <section class="sheet"><h3>How to read this</h3><ul class="reasons">
-   <li><b>Chance to hit</b>: from the 500,000-game sims for game picks, and from the player’s game log for props.</li>
-   <li><b>Needs</b>: the hit rate where the payout breaks even. Props use ${pct(B.power2)} per leg (a 2-pick entry paying 3x); a 6-pick flex entry needs about ${pct(B.flex6)}.</li>
-   <li><b>Back per $1</b>: the average return. Over $1.00 means the model thinks the price is good.</li>
-   <li>Game picks use market odds, or the prices from a screenshot you sent for that game.</li>
-   <li><b>Market lines</b> on props are the median line across sportsbooks, refreshed every morning and again before kickoff on game days. Next to each one is Coyote Calls' projection and the hub's chance at that exact line.</li></ul>
-   <p class="tierkey"><span>Color key, used on every tab:</span><span class="pill t1">Strongest</span><span class="pill t2">Solid</span><span class="pill t3">Thin</span><span class="pill t4">Below break-even</span></p></section>
-  ${howlSection(10)}
-  <section><h3 style="margin-bottom:10px">Best value · top ${B.best.filter(live).length}</h3><div class="grid2">${B.best.filter(live).map(betCard).join('')||'<div class="empty">Every ranked pick has kicked off. The next daily update adds new ones.</div>'}</div></section>
+  <section class="sheet"><p class="tierkey"><span>Strength:</span><span class="pill t1">Strong</span><span class="pill t2">Solid</span><span class="pill t3">Thin</span><span class="pill t4">Below break-even</span></p></section>
+  ${howlSection(5)}
+  <section><h3 style="margin-bottom:10px">Best value</h3><div class="grid2">${showN('best',B.best.filter(live),4).map(betCard).join('')||'<div class="empty">Every ranked pick has kicked off. The next daily update adds new ones.</div>'}</div>${moreBtn('best',B.best.filter(live),4,'value picks')}</section>
   <div id="sec-smash" style="margin-top:28px">${VIEWS.smash()}</div>
-  <div id="sec-pack" style="margin-top:28px">${VIEWS.pack()}</div>
-  <section><h3 style="margin-bottom:6px">Best props by game</h3><p class="note" style="margin-bottom:10px">For each game, the players whose projection moves furthest from their season average, which is roughly where app lines start. Each one says the line that would make it an edge (${pct(B.power2+0.02)} or better per leg).</p>
-   <div class="cards">${(S.d.slate?.games||[]).filter(g=>g.status==='upcoming'&&live({kickoff:g.kickoff_utc})).map(g=>`<div class="sheet" style="gap:6px">${gameProps(g.game_id)}<a class="note" href="#${gid2h(g.game_id)}">Open the game</a></div>`).join('')}</div></section>
-  <section class="sheet"><h3>Safest · top ${B.safest.filter(live).length}</h3><p class="note">The most likely picks to hit. Safe picks pay little, and most still return under $1 per $1 on average.</p>
+  ${S.public?'':`<div id="sec-pack" style="margin-top:28px">${VIEWS.pack()}</div>`}
+  <section><h3 style="margin-bottom:6px">Best props by game</h3>
+   <div class="cards">${showN('bpg',(S.d.slate?.games||[]).filter(g=>g.status==='upcoming'&&live({kickoff:g.kickoff_utc})),3).map(g=>`<div class="sheet" style="gap:6px">${gameProps(g.game_id)}<a class="note" href="#${gid2h(g.game_id)}">Open the game</a></div>`).join('')}</div>${moreBtn('bpg',(S.d.slate?.games||[]).filter(g=>g.status==='upcoming'&&live({kickoff:g.kickoff_utc})),3,'games')}</section>
+  <section class="sheet"><h3>Safest</h3>
    <div class="tbox"><table><thead><tr><th>Pick</th><th>Game</th><th class="r">Chance</th><th class="r">Payout</th><th class="r">Back per $1</th><th>Why</th></tr></thead><tbody>
-   ${B.safest.filter(live).map(c=>`<tr style="${tintBg(c.p,.5,.9,14)}"><td><b>${esc(c.label)}</b>${c.special?` <span class="pill turf">${esc(c.special)}</span>`:''}</td><td>${esc(c.matchup)}</td><td class="r">${pct(c.p)}</td><td class="r">${c.price?fx(c.price):'Entry'}</td><td class="r ${c.value>=1?'good':c.value==null?'':'bad'}">${c.value==null?'—':c.price?'$'+c.value.toFixed(2):c.value.toFixed(2)}</td><td class="wrap-cell note">${esc(c.reasons[0]||'')}</td></tr>`).join('')}
-   </tbody></table></div></section>
+   ${showN('safe',B.safest.filter(live),5).map(c=>`<tr style="${tintBg(c.p,.5,.9,14)}"><td><b>${esc(c.label)}</b>${c.special?` <span class="pill turf">${esc(c.special)}</span>`:''}</td><td>${esc(c.matchup)}</td><td class="r">${pct(c.p)}</td><td class="r">${c.price?fx(c.price):'Entry'}</td><td class="r ${c.value>=1?'good':c.value==null?'':'bad'}">${c.value==null?'—':c.price?'$'+c.value.toFixed(2):c.value.toFixed(2)}</td><td class="wrap-cell note">${esc(c.reasons[0]||'')}</td></tr>`).join('')}
+   </tbody></table></div>${moreBtn('safe',B.safest.filter(live),5,'picks')}</section>
   <section class="sheet"><h3>Prop projections, every game</h3><p class="note">What the model expects before you see a line. Compare these to the app: a line well below the range is a More look, well above is a Less look. Ranges cover the middle half of outcomes.</p>
    <div class="controls"><label class="fld" style="flex:1 1 240px">Game<select id="projg">${games.map(g=>`<option value="${esc(g.game_id)}"${g.game_id===S.projGame?' selected':''}>${esc(g.away)} @ ${esc(g.home)} · ${esc(kick(g))}</option>`).join('')}</select></label></div>
    <div class="tbox" id="projt"></div></section>`;
@@ -1548,30 +1546,38 @@ AFTER.bets=()=>{
   };
   $('#projg')?.addEventListener('change',e=>{S.projGame=e.target.value;draw();}); if($('#projt')) draw();
 };
+/* Today (Nov 22): the Biggest Howl and the Safest Slip (the safest picks on the public site) under Up next */
+function todayRow(){
+  const H=liveHowls().filter(h=>h.market_line!=null), hw=H.find(h=>h.tag&&h.tag!=='Lean')||H[0], out=[];
+  if(hw){ const more=hw.dir_mkt==='more', tn=hw.tag==='Strong look'||hw.tag==='Look'?hw.tag:'Lean';
+    out.push(`<a class="sheet today ${tierBar(tn)}" href="#bets"><p class="kicker">Biggest howl</p><b class="tname">${esc(hw.player)} ${tchip(hw.team)}</b><div class="lookpick"><b>${more?'More':'Less'} ${hw.market_line}</b> ${esc(hw.label.toLowerCase())}</div><div class="mkrow"><span class="muted">Coyote ${hw.proj} · Hub ${pct(hw.p_mkt,0)}</span><span class="pill ${tierCls(tn)}">${tw(tn)}</span></div></a>`); }
+  const cs=S.d.slips?.current, legs=cs?.legs||[];
+  if(legs.length) out.push(`<a class="sheet today" href="#post"><p class="kicker">${esc(cs.title||'Safest Slip')}</p><ul class="reasons">${legs.map(l=>`<li><b>${esc(l.short||l.name)}</b> <span class="muted">${pct(l.p,0)}</span></li>`).join('')}</ul></a>`);
+  else { const sf=(S.d.bestbets?.safest||[]).filter(live).slice(0,3); if(sf.length) out.push(`<a class="sheet today" href="#bets"><p class="kicker">Safest right now</p><ul class="reasons">${sf.map(c=>`<li><b>${esc(c.label)}</b> <span class="muted">${pct(c.p,0)}</span></li>`).join('')}</ul></a>`); }
+  return out.length?`<section class="todaygrid">${out.join('')}</section>`:'';
+}
 VIEWS.week=()=>{
   const sl=S.d.slate, m=S.d.meta; if(!sl) return '<div class="empty">The week’s data has not loaded.</div>';
   const leans=sl.games.filter(g=>g.lean&&g.status==='upcoming');
-  const news=(S.d.news?.items||[]).slice(0,6);
+  const news=(S.d.news?.items||[]).slice(0,4);
   const film=featuredFilm();
   return `<section><p class="kicker">Week ${sl.week} · The Prowl</p><h2 class="sheet-title">Every game, run down 500,000 times</h2>
-   <p class="lede">Every game simulated ${(Object.values(S.d.sims||{})[0]?.sims||500000).toLocaleString()} times, play by play, tuned to the betting line. Leans come from a separate score-based team rating that disagrees with the line by 3+ points.</p></section>
    ${breakingStrip()}
    ${featuredHero()}
-   <div class="rpair">${receipts()}${xReceipts()}</div>
+   ${todayRow()}
    ${slateBoard()}
+   <div class="rpair">${receipts()}${xReceipts()}</div>
    ${S.d.recap?.week?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>The Morning After: week ${S.d.recap.week}</h3><a href="#recap">Report card</a></div><p class="note">${esc(recapLine(S.d.recap))}</p></section>`:''}
    ${film?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Featured sim film</h3><a href="#videos">All ${(S.d.videos||[]).length} films</a></div>
     <div class="film">${vBox(film)}
     <div style="display:flex;flex-direction:column;gap:8px"><p class="kicker">${esc(film.title)}</p><div style="font-family:var(--display);font-weight:700;font-size:34px;line-height:1">${film.away} ${film.modal.away} – ${film.home} ${film.modal.home}</div>
     <p class="note">The projected final (the most common score at the sims’ typical margin and total), played out snap by snap.</p>${slateGame(film.game_id)?`<a href="#${gid2h(film.game_id)}">Open the game</a>`:''}</div></div></section>`:''}
    ${(S.d.smash?.players||[]).length?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>All Out Ambush: due this week</h3><a href="#smash">See the full list</a></div><ol class="reasons">${S.d.smash.players.slice(0,3).map(p=>`<li><b>${esc(p.player)}</b> <span class="note">${esc(p.team)} vs ${esc(p.opp)} · ${esc(p.label.toLowerCase())}: ${p.recent_mean} lately vs ${p.base_mean} normal · Ambush ${Math.round(p.score)} (${esc(p.tier)})</span></li>`).join('')}</ol></section>`:''}
-   ${howlSection(3)}
-   ${(S.d.pack?.top||[]).filter(live).length?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Pack Hunt: picks that hunt together</h3><a href="#pack">Every hunt</a></div><ol class="reasons">${S.d.pack.top.filter(live).slice(0,3).map(x=>`<li><b>${x.leg_rows.map(l=>`${esc(l.player)} ${l.dir==='more'?'More':'Less'} ${l.line}`).join(' + ')}</b> <span class="note">${esc(x.matchup)} · both hit ${pct(x.joint)} vs ${pct(x.indep)} if unrelated · $${x.value.toFixed(2)} back per $1 at 3x</span></li>`).join('')}</ol></section>`:''}
+   ${!S.public&&(S.d.pack?.top||[]).filter(live).length?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Pack Hunt: picks that hunt together</h3><a href="#pack">Every hunt</a></div><ol class="reasons">${S.d.pack.top.filter(live).slice(0,3).map(x=>`<li><b>${x.leg_rows.map(l=>`${esc(l.player)} ${l.dir==='more'?'More':'Less'} ${l.line}`).join(' + ')}</b> <span class="note">${esc(x.matchup)} · both hit ${pct(x.joint)} vs ${pct(x.indep)} if unrelated · $${x.value.toFixed(2)} back per $1 at 3x</span></li>`).join('')}</ol></section>`:''}
    <section class="sheet"><h3>Model leans</h3>
    ${leans.length?`<div class="cards">${leans.map(g=>`<a class="lean card-link" href="#${gid2h(g.game_id)}" style="text-decoration:none;color:inherit"><span class="pill ${g.confidence==='strong lean'?'good':'turf'}">${esc(g.confidence)}</span><b>${esc(g.lean)}</b><span class="note">${esc(g.away)} @ ${esc(g.home)} · edge ${Math.abs(g.spread_edge).toFixed(1)} pts</span></a>`).join('')}</div>`
      :'<p class="note">No game has a 3-point gap between the ratings and the line this week.</p>'}</section>
    ${(S.d.bestbets?.best||[]).filter(c=>!c.kickoff||new Date(c.kickoff)>new Date()).length?`<section class="sheet"><h3>Top value right now</h3><ol class="reasons">${S.d.bestbets.best.filter(c=>!c.kickoff||new Date(c.kickoff)>new Date()).slice(0,3).map(c=>`<li><b>${esc(c.label)}</b> <span class="note">${esc(c.matchup)} · ${pct(c.p)} to hit · ${c.price?'$'+c.value.toFixed(2)+' back per $1':'per-leg value '+c.value.toFixed(2)}</span></li>`).join('')}</ol><a href="#bets">See all best and safest bets</a></section>`:''}
-   <section class="cards">${sl.games.map(gameCard).join('')}</section>
    <section class="sheet"><h3>Headlines</h3>${news.length?`<ul class="news">${news.map(newsItem).join('')}</ul>`:'<p class="note">No headlines saved yet. The daily update adds injury and lineup news here.</p>'}
    ${S.d.news?.updated?`<p class="note">Headlines gathered ${esc(ago(S.d.news.updated))}.</p>`:''}</section>
    <section class="sheet packcard"><h3>Welcome to the pack</h3>
@@ -2294,7 +2300,7 @@ VIEWS.model=()=>{
   <section class="grid2">
    <div class="sheet"><h3>1 · The game sim</h3><p>A play-by-play simulator (runs, passes, sacks, turnovers, punts, field goals, 4th-down calls, clock management, overtime, return touchdowns). For each game it is tuned until its middle outcome matches the <b>Coyote line</b> (the betting spread and total, plus any tested nudge below), then run 500,000 times. It turns one line into everything else: win chances, any alternate spread or total, team totals, exact scores.</p>
    <p class="note">When no nudge applies, the Coyote line is the market line, so the sim finds no edge on its own; it prices payouts and combos.</p></div>
-   ${coyoteSheet()}${packSheet()}${shockSheet()}${marketSheet()}
+   ${coyoteSheet()}${S.public?'':packSheet()}${shockSheet()}${marketSheet()}
    <div class="sheet"><h3>2 · The ratings</h3><p>A separate, independent model: team strength from final scores only (this season, with last season mixed in lightly), with a fitted home-field value of ${m.ratings?.hfa??'—'} points. Where it disagrees with the line by 3+ points, the hub shows a lean, unless a team starts a different quarterback than usual.</p></div>
    <div class="sheet"><h3>Validation of the sim</h3><div class="tbox" style="max-height:none"><table><thead><tr><th>Check</th><th class="r">First version</th><th class="r">Current</th><th class="r">NFL typical</th></tr></thead><tbody>
     <tr><td>Spread of total points (SD)</td><td class="r">11.9</td><td class="r">14.4</td><td class="r">13.5–14</td></tr>
