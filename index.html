@@ -338,6 +338,7 @@ h2.foldhead,h3.foldhead,p.foldhead,header.foldhead,.controls.foldhead{display:fl
 .howlnums b{font-family:var(--display);font-size:20px}
 .mkrow{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;font-size:13px;background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px}
 .mkrow b{font-family:var(--display);font-size:16px;letter-spacing:.02em}
+.lookpick{font-size:17px;margin:2px 0 6px}.lookpick b{font-family:var(--display);font-size:20px;letter-spacing:.02em}
 /* combined tabs */
 .jumprow{display:flex;justify-content:flex-end;margin-bottom:-8px}
 .secbreak{border-top:2px solid var(--line);margin-top:8px;scroll-margin-top:var(--hdr,150px)}
@@ -1489,13 +1490,14 @@ VIEWS.smash=()=>{
 const TAGCLS={'Edge':'t1','Thin edge':'t3','Below break-even':'t4','Special line':'t2'};
 const live=c=>!c.kickoff||new Date(c.kickoff)>new Date();
 const LOOKCLS={'Strong look':'t1','Look':'t2','Lean':'t3'};
+/* the look card's pick line (Nov 22): bigger than the rest, so the pick reads first */
 function gameProps(gid,{title=true}={}){
   const g=slateGame(gid); const looks=(S.d.proplooks||[]).find(x=>x.game_id===gid)?.looks||[];
   const lk=l=>{const more=l.direction==='more'; const thr=more?l.more_at:l.less_at;
     return `<li class="lookrow ${tierBar(l.tag)}"><div class="controls" style="justify-content:space-between"><span><b>${esc(l.player)}</b>${injTag(l.player,l.team)} <span class="muted">${tchip(l.team)}${esc(l.pos)}</span></span><span class="slipwrap">${l.tag?`<span class="pill ${LOOKCLS[l.tag]||''}">${esc(l.tag)}</span>`:''}${slipBtn({name:l.player,team:l.team,pos:l.pos,gid:l.game_id,stat:l.stat,line:l.market_line??l.typical_line,dir:l.market_line!=null?l.dir_mkt:l.direction})}</span></div>
-     <div><b>${more?'More':'Less'}</b> ${esc(l.label.toLowerCase().replace('tds','TDs'))} · projects <b>${l.proj}</b> vs ${l.avg} average</div>
-     <div class="note">${thr!=null?`Edge if the line is <b>${thr}</b> or ${more?'lower':'higher'}.`:'No standard line clears the bar.'} At his usual ${l.typical_line}, the hub gives ${more?'More':'Less'} ${pct(l.p_at_avg)}.</div>
-     ${l.market_line!=null?`<div class="mkrow">${mvTag(l.player,l.stat,l.dir_mkt)}${buzzTag(l.player,l.team)}<span><b>Market ${l.market_line}</b> <span class="muted">${l.market_books} book${l.market_books===1?'':'s'}${l.market_p_over!=null?` · More ${pct(l.market_p_over,0)}`:''}</span></span><span><b>Coyote projects ${l.proj}</b> <span class="muted">${l.gap!=null?`(${l.gap>0?'+':''}${l.gap})`:''}</span></span><span><b>Hub line ${l.hub_line??'—'}</b> <span class="muted">${l.dir_mkt==='more'?'More':'Less'} ${pct(l.p_mkt,0)} at ${l.market_line}</span></span>${l.p_mkt>=edgeBar()?'<span class="pill good">Clears 2-pick bar</span>':'<span class="pill">Under 2-pick bar</span>'}</div>`:''}
+     ${(()=>{ const mk=l.market_line!=null, up=mk?l.dir_mkt==='more':more, lab=esc(l.label.toLowerCase().replace('tds','TDs'));
+       return `<div class="lookpick"><b>${up?'More':'Less'}${mk?` ${l.market_line}`:''}</b> ${lab} · Coyote <b>${l.proj}</b></div>
+       <div class="mkrow"><span class="muted">${mk?`Hub ${pct(l.p_mkt,0)}`:`No market line yet · hub ${pct(l.p_at_avg,0)} at ${l.typical_line}`}</span>${mk&&l.p_mkt>=edgeBar()?'<span class="pill good">Clears 2-pick bar</span>':''}${mk?mvTag(l.player,l.stat,l.dir_mkt):''}${buzzTag(l.player,l.team)}</div>`; })()}
      <details><summary class="note">Why</summary><ul class="reasons">${l.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></details></li>`;};
   return `${title?`<div class="controls" style="justify-content:space-between"><h3>${esc(g?`${g.away} @ ${g.home}`:gid)}</h3><span class="note">${esc(g?kick(g):'')}</span></div>`:''}
    ${looks.length?`<p class="eyebrow">Model looks</p><ul class="looks">${looks.map(lk).join('')}</ul>`:'<p class="note">Not enough games played to project props here.</p>'}`;
