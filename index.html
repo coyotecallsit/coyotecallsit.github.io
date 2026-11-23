@@ -494,7 +494,7 @@ const fx=x=>x==null?'—':x.toFixed(2)+'x';
 const money=x=>x==null?'—':(x<0?'−$':'$')+Math.abs(x).toFixed(2);
 const tchip=t=>TEAM[t]?`<span class="tchip" style="background:${TEAM[t][1]};box-shadow:inset 0 -2px 0 ${TEAM[t][2]}">${esc(t)}</span>`:esc(t||'');
 /* one pick-strength scale everywhere (Nov 19): 1 green strongest, 2 teal solid, 3 amber thin, 4 red below break-even */
-const TIER={'Strong look':1,'Edge':1,'Ambush spot':1,'Look':2,'Primed':2,'Special line':2,'Lean':3,'Thin edge':3,'Stalking':3,'Below break-even':4};
+const TIER={'Stale line':1,'Strong look':1,'Edge':1,'Ambush spot':1,'Look':2,'Primed':2,'Special line':2,'Lean':3,'Thin edge':3,'Stalking':3,'Below break-even':4};
 const tierCls=t=>TIER[t]?'t'+TIER[t]:'', tierBar=t=>TIER[t]?'tb'+TIER[t]:'';
 /* one strength word everywhere (Nov 22): the model's tags stay as they are in the data */
 (()=>{ try{ const t=localStorage.getItem('cc-theme'); if(t==='dark'||t==='light') document.documentElement.dataset.theme=t; }catch(e){} })();
@@ -2059,6 +2059,40 @@ document.addEventListener('click',e=>{
     else { S.scrollSlip=true; location.hash='props'; } }
 });
 let PID_BY_NAME=null;
+/* ---------- stale line finder (Nov 23): the app's line vs the sportsbooks' own chance at that exact number ---------- */
+try{ S.sfText=localStorage.getItem('cc-sf')||''; }catch(e){ S.sfText=''; }
+const SF_STAT=[[/rush\s*(\+|&|and)\s*rec/i,'rush_rec_yards'],[/pass(ing)?\s*(yds|yards|yd)/i,'passing_yards'],[/pass(ing)?\s*tds?\b/i,'passing_tds'],
+  [/rec(eiving)?\s*(yds|yards|yd)/i,'receiving_yards'],[/rush(ing)?\s*(yds|yards|yd)/i,'rushing_yards'],[/\b(recs?|receptions|catches)\b/i,'receptions'],
+  [/\b(completions|comps?)\b/i,'completions'],[/\b(pass )?attempts\b/i,'attempts']];
+function sfParse(raw){
+  const s=raw.trim(), m=s.match(/(?:^|\s)([oOuU])?\s*(\d+(?:\.\d+)?)/); if(!m) return {err:`No line number in “${s}”.`};
+  let dir=null; if(/\b(over|more|higher)\b|↑/i.test(s)||/(^|\s)o\s*\d/i.test(s)) dir='more'; if(/\b(under|less|lower)\b|↓/i.test(s)||/(^|\s)u\s*\d/i.test(s)) dir='less';
+  const st=(SF_STAT.find(([rx])=>rx.test(s))||[])[1]; if(!st) return {err:`No stat in “${s}”. Try rec, rec yds, rush yds, pass yds or pass TDs.`};
+  const name=s.slice(0,m.index).replace(/\b(over|under|more|less|higher|lower)\b|[↑↓]/ig,'').trim();
+  return name?{name,dir,line:+m[2],stat:st}:{err:`No player name in “${s}”.`};
+}
+function sfRow(q){
+  const P=S.d.logs?.players||{}, n=mnorm(q.name); let id=Object.keys(P).find(k=>mnorm(P[k].name)===n);
+  if(!id){ const last=n.split(' ').pop(), c=Object.keys(P).filter(k=>mnorm(P[k].name).split(' ').pop()===last); if(c.length===1) id=c[0]; }
+  if(!id) return `<li class="note">Couldn’t find the player in “${esc(q.raw)}”.</li>`;
+  const L=P[id], M=propModel(L,q.stat,q.line); if(!M) return `<li class="note"><b>${esc(L.name)}</b>: not enough games to model ${esc((PSTAT[q.stat]||q.stat).toLowerCase())}.</li>`;
+  const mk=mline(L.name,q.stat), pbo=mk&&mk.line!=null?marketOver(q.stat,M.sd,mk,q.line):null;
+  const dir=q.dir||(pbo!=null?(pbo>=.5?'more':'less'):(M.pOver>=.5?'more':'less')), side=v=>dir==='more'?v:1-v, pb=pbo!=null?side(pbo):null, bar=edgeBar();
+  const tag=pb==null?['t3','No books’ line']:pb>=bar?['t1','Stale line']:pb>=.52?['t3','Close']:['t4','No edge'];
+  const g=(S.d.slate?.games||[]).find(x=>x.status==='upcoming'&&(x.away===L.team||x.home===L.team));
+  return `<li class="lookrow ${tag[0].replace('t','tb')}"><div class="controls" style="justify-content:space-between"><span><b>${esc(L.name)}</b> <span class="muted">${tchip(L.team)}${esc(L.pos)}</span></span><span class="slipwrap"><span class="pill ${tag[0]}">${tag[1]}</span>${slipBtn({name:L.name,team:L.team,pos:L.pos,gid:g?.game_id,stat:q.stat,line:q.line,dir})}</span></div>
+   <div class="lookpick"><b>${dir==='more'?'More':'Less'} ${q.line}</b> ${esc((PSTAT[q.stat]||q.stat).toLowerCase())} · Coyote <b>${M.proj.toFixed(1)}</b></div>
+   <div class="mkrow"><span class="muted">${pb!=null?`Books’ line ${mk.line} · books give this side ${pct(pb,0)}`:'No books’ line for this prop yet'} · hub ${pct(side(M.pOver),0)}</span></div></li>`;
+}
+function staleSection(){ return `<section class="sheet" id="sec-stale"><h3>Stale line finder</h3>
+  <p class="note">Paste the app’s lines, one per line. <b>Stale line</b>: at the app’s number the sportsbooks give that side ${pct(edgeBar(),0)} or more.</p>
+  <textarea id="sf-in" rows="4" style="width:100%;box-sizing:border-box;font:15px var(--body);padding:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--ink)" placeholder="T.J. Hockenson over 3.5 rec&#10;Justin Jefferson u7 rec&#10;Christian McCaffrey o51.5 rush yds">${esc(S.sfText||'')}</textarea>
+  <div class="controls" style="margin-top:8px"><button type="button" class="btn" id="sf-go">Check lines</button></div><ul class="howllist" id="sf-out"></ul></section>`; }
+function afterStale(){ const go=$('#sf-go'); if(!go) return;
+  const run=()=>{ const t=$('#sf-in').value; S.sfText=t; try{ localStorage.setItem('cc-sf',t); }catch(e){}
+    if(S.lazyP){ $('#sf-out').innerHTML='<li class="note">Loading players…</li>'; return; }   // the props view redraws when they arrive and runs this again
+    $('#sf-out').innerHTML=t.split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,30).map(raw=>{ const q=sfParse(raw); return q.err?`<li class="note">${esc(q.err)}</li>`:sfRow({...q,raw}); }).join(''); };
+  go.addEventListener('click',run); if(S.sfText) run(); }
 function legModel(l){
   if(!PID_BY_NAME){ PID_BY_NAME={}; const P=S.d.logs?.players||{}; for(const k in P) PID_BY_NAME[P[k].name]=k; }
   const L=S.d.logs?.players?.[PID_BY_NAME[l.name]]; return L?propModel(L,l.stat,l.line):null;
@@ -2241,8 +2275,8 @@ AFTER.ledger=()=>$$('tr[data-g]').forEach(tr=>tr.addEventListener('click',()=>lo
 AFTER.about=()=>{ if(!S.public) AFTER.ledger(); };
 /* Prop Lab carries the Line Shop under the calculator (tabs merged, the owner, Nov 19); #shop opens it */
 { const propsOnly=VIEWS.props, shopOnly=VIEWS.shop, afterProps=AFTER.props, afterShop=AFTER.shop;
-  VIEWS.props=()=>`<p class="note" style="margin:0 0 10px"><a href="#shop">Jump to the Line Shop ↓</a></p>${propsOnly()}<div id="sec-shop" style="margin-top:28px">${shopOnly()}</div>`;
-  AFTER.props=()=>{ try{ afterProps(); }catch(e){ console.error(e); } afterShop(); }; }
+  VIEWS.props=()=>`<p class="note" style="margin:0 0 10px"><a href="#shop">Jump to the Line Shop ↓</a></p>${staleSection()}${propsOnly()}<div id="sec-shop" style="margin-top:28px">${shopOnly()}</div>`;
+  AFTER.props=()=>{ try{ afterStale(); }catch(e){ console.error(e); } try{ afterProps(); }catch(e){ console.error(e); } afterShop(); }; }
 
 /* track record */
 const KINDS=[['best','Best value','The top picks by return per $1 each morning, logged only at break-even or better'],['safest','Safest','Top 10 most likely to hit'],['lean','Model leans',''],
