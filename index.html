@@ -452,6 +452,9 @@ dialog.morebox{border:0;margin:auto auto 0;width:100%;max-width:100%;border-radi
 .px.val b{color:var(--good)}.px i{font-style:normal;font-size:9px;margin-left:3px;vertical-align:1px}
 .px.off,.px.old{opacity:.55}
 @media (max-width:540px){.shop .mk{min-width:98px;max-width:112px;font-size:13px}.shop td,.shop th{padding:6px 6px}}
+.wl{font-size:.5em;font-weight:700;letter-spacing:.03em;margin:0 .14em 0 .05em;opacity:.72}
+td .wl,.note .wl{font-size:.75em}
+.receipts .rv small{display:block;margin:2px 0 0;white-space:nowrap}
 /* ---------- design pass (Nov 23, the owner: less crowded, less boxy, less plain) ---------- */
 :root{--r:10px;--shadow:0 1px 2px rgba(42,33,24,.06),0 6px 20px rgba(42,33,24,.07);
   --paw:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -9.5 16 18'%3E%3Cellipse cx='0' cy='4' rx='5' ry='4.2'/%3E%3Cellipse cx='-5.3' cy='-3' rx='1.9' ry='2.6'/%3E%3Cellipse cx='-1.9' cy='-6.3' rx='1.9' ry='2.6'/%3E%3Cellipse cx='1.9' cy='-6.3' rx='1.9' ry='2.6'/%3E%3Cellipse cx='5.3' cy='-3' rx='1.9' ry='2.6'/%3E%3C/svg%3E")}
@@ -539,6 +542,7 @@ const money=x=>x==null?'—':(x<0?'−$':'$')+Math.abs(x).toFixed(2);
 const tchip=t=>TEAM[t]?`<span class="tchip" style="background:${TEAM[t][1]};box-shadow:inset 0 -2px 0 ${TEAM[t][2]}">${esc(t)}</span>`:esc(t||'');
 /* one pick-strength scale everywhere (Nov 19): 1 green strongest, 2 teal solid, 3 amber thin, 4 red below break-even */
 const TIER={'Strong look':1,'Edge':1,'Ambush spot':1,'Look':2,'Primed':2,'Special line':2,'Lean':3,'Thin edge':3,'Stalking':3,'Below break-even':4};
+const WL=(w,l,p)=>`${w}<span class="wl">W</span>–${l}<span class="wl">L</span>${p?`–${p}<span class="wl">P</span>`:''}`;   // our records: 7W–10L
 const tierCls=t=>TIER[t]?'t'+TIER[t]:'', tierBar=t=>TIER[t]?'tb'+TIER[t]:'';
 /* one strength word everywhere (Nov 22): the model's tags stay as they are in the data */
 (()=>{ try{ const t=localStorage.getItem('cc-theme'); if(t==='dark'||t==='light') document.documentElement.dataset.theme=t; }catch(e){} })();
@@ -1119,9 +1123,9 @@ function xpostsView(){
   const rec=([w,l])=>`${w}–${l}`, rows=X.I.slice().reverse();
   return `<section><h2 class="sheet-title">Slips Posted to X</h2><p class="lede">Every slip posted on <a href="${XURL}" target="_blank" rel="noopener">@CoyotesCalls</a>, graded the same way as the model: set before kickoff, graded from final scores and official stats, misses included. Safest Slips and Biggest Howls are the hub's picks; personal picks are our own plays, built with the hub.</p></section>
   <section class="tiles">
-   <div class="tile"><span class="k">Posted slips</span><span class="v">${X.won}–${X.n-X.won}</span><span class="k">${X.pending?`${X.pending} pending · `:''}every leg has to hit</span></div>
+   <div class="tile"><span class="k">Posted slips</span><span class="v">${WL(X.won,X.n-X.won)}</span><span class="k">${X.pending?`${X.pending} pending · `:''}every leg has to hit</span></div>
    <div class="tile"><span class="k">Legs hit</span><span class="v">${X.hit} of ${X.legs}</span><span class="k">${X.legs?pct(X.hit/X.legs,0)+' hit':''}${X.exp!=null?` · sims expected ${pct(X.exp,0)}`:''}</span></div>
-   <div class="tile"><span class="k">Biggest Howls</span><span class="v">${X.howls[0]}–${X.howls[1]}</span><span class="k">Single-pick slips</span></div>
+   <div class="tile"><span class="k">Biggest Howls</span><span class="v">${WL(X.howls[0],X.howls[1])}</span><span class="k">Single-pick slips</span></div>
   </section>
   <section class="sheet"><h3>Every slip</h3><div class="tbox" style="max-height:none"><table><thead><tr><th>Date</th><th>Post</th><th>Legs</th><th class="r">Sims gave it</th><th>Result</th></tr></thead><tbody>
    ${rows.map(i=>`<tr class="${i.result==='win'?'rw':i.result==='loss'?'rl':''}"><td>${esc(newsDate(i.posted))}</td><td><b>${esc(i.title)}</b><br><span class="note">${esc(XKIND[i.kind]||'')}${i.matchup?` · ${esc(i.matchup)}`:''}</span></td>
@@ -1135,7 +1139,7 @@ function xReceipts(){
   const last=X.done.slice(-10), w=i=>i.result==='win'?'Won':'Lost';
   return `<section class="receipts xr" aria-label="Slips posted to X">
    <span class="rk">Slips posted to X</span>
-   <div><span class="rlabel">Posted slips, graded</span><span class="rv">${X.won}–${X.n-X.won}${X.pending?`<small>${X.pending} pending</small>`:''}</span></div>
+   <div><span class="rlabel">Posted slips, graded</span><span class="rv">${WL(X.won,X.n-X.won)}${X.pending?`<small>${X.pending} pending</small>`:''}</span></div>
    <div class="rdots"><span class="rlabel">Last ${last.length}, oldest to newest</span><div class="dots" role="img" aria-label="${last.map(w).join(', ')}">${last.map(i=>`<i class="${i.result==='win'?'w':'l'}" title="${esc(i.title)}: ${w(i)}"></i>`).join('')}</div></div>
    <div><span class="rlabel">Legs hit</span><span class="rv">${X.legs?pct(X.hit/X.legs,0):'—'}<small>${X.hit} of ${X.legs}${X.exp!=null?` · sims ${pct(X.exp,0)}`:''}</small></span></div>
    <a class="rlink" href="#posted">Every slip</a>
@@ -1150,10 +1154,10 @@ function receipts(){
   const since=log.map(r=>r.kickoff).filter(Boolean).sort()[0], b3=S.d.backtest?.summary?.spread?.find(x=>x.threshold===3);
   return `<section class="receipts" aria-label="The receipts">
    <span class="rk">The receipts</span>
-   <div><span class="rlabel">Every live pick, graded</span><span class="rv">${R.w}–${R.l}${R.p?`–${R.p}`:''}${n?`<small>${pct(R.w/n,0)} hit</small>`:''}</span></div>
+   <div><span class="rlabel">Every live pick, graded</span><span class="rv">${WL(R.w,R.l,R.p)}${n?`<small>${pct(R.w/n,0)} hit</small>`:''}</span></div>
    <div class="rdots"><span class="rlabel">Last ${last.length||10}${last.length?', oldest to newest':''}</span>${last.length?`<div class="dots" role="img" aria-label="${last.map(r=>RES[r.result]?.[1]).join(', ')}">${last.map(r=>`<i class="${r.result==='win'?'w':r.result==='loss'?'l':''}" title="${esc(r.label)}: ${RES[r.result]?.[1]}"></i>`).join('')}</div>`:'<span class="rv"><small>None graded yet</small></span>'}</div>
    ${(S.d.clv?.summary?.n||0)>=10?(c=>`<div><span class="rlabel">Beat the close</span><span class="rv">${c.toward} of ${c.n}<small>${sgn(c.avg,2)} pts avg</small></span></div>`)(S.d.clv.summary)
-     :`<div><span class="rlabel">Rating leans, 3+ pts</span><span class="rv">${b3?`${b3.wins}–${b3.losses}<small>${pct(b3.win_pct,0)} backtest</small>`:'—'}</span></div>`}
+     :`<div><span class="rlabel">Rating leans, 3+ pts</span><span class="rv">${b3?`${WL(b3.wins,b3.losses)}<small>${pct(b3.win_pct,0)} backtest</small>`:'—'}</span></div>`}
   </section>`;
 }
 /* sim film: a cover with the matchup and projected final until the film is played */
@@ -1464,7 +1468,7 @@ function shopSide(row,side){
    own consensus (bets.stale_lines). Inside the Line Shop, the one place the site names books. */
 function staleCard(){
   const D=S.d.stale, now=new Date().toISOString(), xs=(D?.spots||[]).filter(x=>x.starts&&x.starts>now);
-  const R=S.d.record?.stale||{}, rec=['Stale line','Small edge'].map(t=>{ const x=R[t]||{}; return x.graded?`${t}s ${x.wins}–${x.losses} (${x.units>=0?'+':'−'}${Math.abs(x.units).toFixed(2)} units)`:null; }).filter(Boolean).join(' · ');
+  const R=S.d.record?.stale||{}, rec=['Stale line','Small edge'].map(t=>{ const x=R[t]||{}; return x.graded?`${t}s ${WL(x.wins,x.losses)} (${x.units>=0?'+':'−'}${Math.abs(x.units).toFixed(2)} units)`:null; }).filter(Boolean).join(' · ');
   const row=x=>{ const big=x.ev>=.05, oth=(x.others||[]).filter(v=>v!==x.line&&v!==x.cons);
     const old=x.age!=null&&x.age>=60?` · ${esc(x.book_name)} hadn’t moved in ${x.age>=120?Math.round(x.age/60)+' hours':x.age+' minutes'}`:'';
     return `<li class="lookrow ${big?'tb1':'tb3'}"><div class="controls" style="justify-content:space-between"><span><b>${esc(x.player)}</b> <span class="muted">${x.team?tchip(x.team):''}${esc(x.pos||'')}</span></span><span class="pill ${big?'t1':'t3'}">${big?'Stale line':'Small edge'}</span></div>
@@ -2297,14 +2301,14 @@ const RES={win:['good','Hit'],loss:['bad','Miss'],push:['','Push'],void:['','Voi
 /* line movement as a model input (linemove.py, Nov 20): prop looks won-lost by the way the line moved before kickoff; hub only */
 function moveCard(M){
   if(!M||S.public) return '';
-  const row=(k,lab)=>{ const x=M[k]||{}; return `<tr><td>${lab}</td><td class="r">${x.graded?`${x.wins}–${x.losses}`:'—'}</td><td class="r">${x.hit_rate!=null?pct(x.hit_rate):'—'}</td><td class="r">${x.expected!=null?pct(x.expected):'—'}</td></tr>`; };
+  const row=(k,lab)=>{ const x=M[k]||{}; return `<tr><td>${lab}</td><td class="r">${x.graded?WL(x.wins,x.losses):'—'}</td><td class="r">${x.hit_rate!=null?pct(x.hit_rate):'—'}</td><td class="r">${x.expected!=null?pct(x.expected):'—'}</td></tr>`; };
   const n=['ours','against','flat'].reduce((a,k)=>a+(M[k]?.graded||0),0);
   return `<section class="sheet"><h3>Line movement scorecard</h3><p class="note">Prop looks vs the market, split by the way the line moved between the first update that saw it and kickoff. If looks the line moved against keep missing more than the rest, the Dec 8 checkpoint turns on the rule that drops them to Lean.${n?'':' Tracking started Nov 20; results fill in as games are graded.'}</p>
    <div class="tbox"><table><thead><tr><th>Line moved</th><th class="r">Won–lost</th><th class="r">Hit rate</th><th class="r">Hub said</th></tr></thead><tbody>${row('ours','Our way')}${row('against','Against us')}${row('flat','No move')}</tbody></table></div></section>`;
 }
 function buzzCard(M){
   if(!M||S.public) return '';
-  const row=(k,lab)=>{ const x=M[k]||{}; return `<tr><td>${lab}</td><td class="r">${x.graded?`${x.wins}–${x.losses}`:'—'}</td><td class="r">${x.hit_rate!=null?pct(x.hit_rate):'—'}</td><td class="r">${x.expected!=null?pct(x.expected):'—'}</td></tr>`; };
+  const row=(k,lab)=>{ const x=M[k]||{}; return `<tr><td>${lab}</td><td class="r">${x.graded?WL(x.wins,x.losses):'—'}</td><td class="r">${x.hit_rate!=null?pct(x.hit_rate):'—'}</td><td class="r">${x.expected!=null?pct(x.expected):'—'}</td></tr>`; };
   return `<section class="sheet"><h3>Buzz scorecard</h3><div class="tbox"><table><thead><tr><th>Prop looks</th><th class="r">Won–lost</th><th class="r">Hit rate</th><th class="r">Hub said</th></tr></thead><tbody>${row('agrees','Buzz agreed with the side')}${row('disagrees','Buzz went against the side')}${row('up','Role up')}${row('down','Role down')}${row('mixed','Mixed')}</tbody></table></div></section>`;
 }
 function recordView(){
@@ -2317,14 +2321,14 @@ function recordView(){
   const totW=KINDS.reduce((a,[k])=>a+(L[k]?.wins||0),0), totL=KINDS.reduce((a,[k])=>a+(L[k]?.losses||0),0);
   return `<section><h2 class="sheet-title">Track record</h2><p class="lede">Every pick the hub shows is saved each morning and frozen at kickoff, then graded automatically: game picks from final scores, props from the official player stats once they post (usually the next day). Nothing is edited after the fact.</p></section>
   <section class="tiles">
-   <div class="tile"><span class="k">Live picks graded</span><span class="v">${totW}–${totL}</span><span class="k">${totW+totL?pct(totW/(totW+totL))+' hit rate':'Graded after each game'}</span></div>
-   <div class="tile"><span class="k">Rating leans, 3+ pts</span><span class="v">${b3?`${b3.wins}–${b3.losses}`:'—'}</span><span class="k">${b3?pct(b3.win_pct)+' this season (backtest)':''}</span></div>
+   <div class="tile"><span class="k">Live picks graded</span><span class="v">${WL(totW,totL)}</span><span class="k">${totW+totL?pct(totW/(totW+totL))+' hit rate':'Graded after each game'}</span></div>
+   <div class="tile"><span class="k">Rating leans, 3+ pts</span><span class="v">${b3?WL(b3.wins,b3.losses):'—'}</span><span class="k">${b3?pct(b3.win_pct)+' this season (backtest)':''}</span></div>
    <div class="tile"><span class="k">Prop looks, backtest</span><span class="v">${lb?.top_all?.hit_rate!=null?pct(lb.top_all.hit_rate):'—'}</span><span class="k">${lb?`${lb.top_all.hits} of ${lb.top_all.n}, weeks ${lb.weeks[0]}–${lb.weeks[1]}`:''}</span></div>
    <div class="tile"><span class="k">Sim win-chance accuracy</span><span class="v">${cal?.brier!=null?cal.brier.toFixed(3):'—'}</span><span class="k">${cal?.games||0} game${cal?.games===1?'':'s'} graded (0.25 = coin flip)</span></div>
   </section>${moveCard(R.moves)}${buzzCard(R.buzz)}
   <section class="sheet"><h3>Live picks log</h3><p class="note">"Expected" is the average chance the hub gave those picks; a well-calibrated model hits close to it. The bar under each hit rate is green when it beats the expected rate (the dark line) and red when it falls short.</p>
    <div class="tbox" style="max-height:none"><table><thead><tr><th>Category</th><th class="r">Picks</th><th class="r">Record</th><th class="r">Hit rate</th><th class="r">Expected</th><th class="r">Return per $1</th><th class="r">Pending</th></tr></thead><tbody>
-   ${KINDS.map(([k,l,d])=>{const x=L[k]||{}; return `<tr><td><b>${l}</b>${d?`<br><span class="note">${d}</span>`:''}</td><td class="r">${x.picks||0}</td><td class="r">${x.wins||0}–${x.losses||0}${x.pushes?`–${x.pushes}`:''}</td><td class="r">${pct(x.hit_rate)}${x.hit_rate!=null&&x.expected!=null?`<span class="hbar" title="Bar: hit rate. Line: expected"><i class="${x.hit_rate>=x.expected?'up':'dn'}" style="width:${Math.round(x.hit_rate*100)}%"></i><b style="left:${Math.round(x.expected*100)}%"></b></span>`:''}</td><td class="r">${pct(x.expected)}</td><td class="r ${x.roi>0?'good':x.roi<0?'bad':''}">${x.roi!=null?(x.roi>=0?'+':'−')+'$'+Math.abs(x.roi).toFixed(2):'—'}</td><td class="r">${x.pending||0}</td></tr>`;}).join('')}
+   ${KINDS.map(([k,l,d])=>{const x=L[k]||{}; return `<tr><td><b>${l}</b>${d?`<br><span class="note">${d}</span>`:''}</td><td class="r">${x.picks||0}</td><td class="r">${WL(x.wins||0,x.losses||0,x.pushes)}</td><td class="r">${pct(x.hit_rate)}${x.hit_rate!=null&&x.expected!=null?`<span class="hbar" title="Bar: hit rate. Line: expected"><i class="${x.hit_rate>=x.expected?'up':'dn'}" style="width:${Math.round(x.hit_rate*100)}%"></i><b style="left:${Math.round(x.expected*100)}%"></b></span>`:''}</td><td class="r">${pct(x.expected)}</td><td class="r ${x.roi>0?'good':x.roi<0?'bad':''}">${x.roi!=null?(x.roi>=0?'+':'−')+'$'+Math.abs(x.roi).toFixed(2):'—'}</td><td class="r">${x.pending||0}</td></tr>`;}).join('')}
    </tbody></table></div>
    <p class="note">Return per $1 counts only picks with a known price: market odds, prices from your screenshots, or Pack Hunt pairs at a 2-pick 3x. Props are judged by hit rate against the 57.7% a 2-pick entry needs.</p></section>
   <section class="sheet"><h3>Graded picks</h3>${graded.length?`<div class="tbox"><table><thead><tr><th>Week</th><th>Game</th><th>Category</th><th>Pick</th><th class="r">Chance</th><th>Result</th></tr></thead><tbody>
