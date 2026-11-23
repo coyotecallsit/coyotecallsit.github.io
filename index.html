@@ -2019,13 +2019,15 @@ AFTER.props=()=>{
     $('#pout').innerHTML=`<div class="tiles" style="margin-top:12px">
       <div class="tile tint-${verdict[0]}"><span class="k">Chance of ${more?'More':'Less'}</span><span class="v ${verdict[0]}">${pct(p)}</span><span class="k">${verdict[1]}</span></div>
       ${stat==='anytime_td'?'':`<div class="tile"><span class="k">Coyote alone</span><span class="v">${pct(more?M.pCoy:1-M.pCoy)}</span><span class="k">${M.mkUsed?'Books':'Your line'} get ${pct(M.aMk,0)} of the say</span></div>`}
+    </div><div class="chart" style="margin-top:10px"><p class="note" style="margin:0 0 4px">Game by game this season · green went over ${line}</p>${svg}</div>
+    <div class="tiles" style="margin-top:10px">
       <div class="tile"><span class="k">Needed per leg</span><span class="v">${pct(be)}</span><span class="k">${esc($('#pe').selectedOptions[0].text)} at ${E.pay[E.n]}x</span></div>
       <div class="tile"><span class="k">Projection</span><span class="v">${stat==='anytime_td'?pct(M.pOver):M.proj.toFixed(1)}</span><span class="k">Season avg ${M.avg.toFixed(1)}</span></div>
       <div class="tile"><span class="k">Market line</span><span class="v">${mk?mk.line:'—'}</span><span class="k">${mk?`Median of ${mk.books} book${mk.books===1?'':'s'}${mk.p_over!=null?` · market More ${pct(mk.p_over,0)}`:''}`:'Not posted yet'}</span></div>
       <div class="tile"><span class="k">Hit rate over ${line}</span><span class="v">${M.hit}/${M.n}</span><span class="k">Games this season</span></div>
       <div class="tile"><span class="k">Next opponent</span><span class="v">${esc(M.opp||'—')}</span><span class="k">${M.dst?`Allows ${M.dst.avg} ${esc(PSTAT[stat].toLowerCase())}/g to ${esc(L.pos)}s (#${M.dst.rank} most)`:M.dpos?`Allows ${M.dpos.ppg} PPR pts/g to ${esc(L.pos)}s (#${M.dpos.rank} most)`:'No matchup data'}</span></div>
       <div class="tile"><span class="k">Team implied points</span><span class="v">${M.implied??'—'}</span><span class="k">Season average ${M.ppg??'—'}</span></div>
-    </div><div class="chart" style="margin-top:10px">${svg}</div>
+    </div>
     <div class="controls"><button type="button" class="btn" id="addleg">Add to slip</button><span class="note">Projection weights recent games more and moves halfway toward the matchup and the team’s implied points. ${stat==='anytime_td'?'':`The chance mixes Coyote’s own read (${pct(more?M.pCoy:1-M.pCoy)}) with ${M.mkUsed?`the sportsbooks’ consensus (line ${M.mkUsed.line}${M.mkUsed.p_over!=null?`, More ${pct(M.mkUsed.p_over,0)}`:''})`:'your line, taken as a fair market line since the books have none posted'}; the market gets ${pct(M.aMk,0)} of the say, the share that tested best against this season’s closing lines on props like this.`}${M.cxw.length?` This week: ${M.cxw.map(esc).join(' ')} (${M.cxr>1?'+':''}${Math.round((M.cxr-1)*100)}%)`:''}</span></div>`;
     tipify($('#pout'));
     $('#addleg').onclick=()=>{ slipAdd([{name:L.name,team:L.team,pos:L.pos,stat,line,dir:more?'more':'less'}]); };
