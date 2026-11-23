@@ -2235,13 +2235,15 @@ const chipShort=cs=>{ if(!cs||!cs.length) return ''; const y=cs.filter(c=>c.ok);
   return `<div class="chks">${y.slice(0,3).map(c=>`<span class="chk y" title="${esc(c.why)}">✓ ${esc(c.k)}</span>`).join('')}<span class="chk c" title="${esc(cs.map(c=>(c.ok?'✓ ':'✗ ')+c.k).join(' · '))}">${y.length} of ${cs.length} checks</span></div>`; };
 const chipRow=(cs,n=9)=>cs&&cs.length?`<div class="chks">${cs.slice(0,n).map(c=>`<span class="chk ${c.ok?'y':'n'}" title="${esc(c.why)}">${c.ok?'✓':'✗'} ${esc(c.k)}</span>`).join('')}</div>`:'';
 const LEAK_SKIP=new Set(['attempts','completions']);
+const SOFTW={targets:'targets',receptions:'catches',receiving_yards:'rec yards',receiving_tds:'rec TDs',carries:'carries',rushing_yards:'rush yards',rushing_tds:'rush TDs',passing_yards:'pass yards',passing_tds:'pass TDs'};
+const capFirst=t=>t?t[0].toUpperCase()+t.slice(1):t;
 function leaks(def,limit=6){
   const T=S.d.dvr?.teams?.[def]; if(!T) return []; const out=[];
   for(const [role,D] of Object.entries(T)) for(const [k,x] of Object.entries(D.stats||{})) if(x[2]<=3&&x[0]>0&&!LEAK_SKIP.has(k)&&ROLE_NAME[role])
-    out.push({role,k,tot:x[0],pg:x[1],rank:x[2],n:D.n,text:`${def} has allowed ${fmtN(x[0])} ${STATW[k]||k} to ${ROLE_NAME[role][1]} in its last ${D.n} games, ${rankTxt(x[2])}.`});
+    out.push({role,k,tot:x[0],pg:x[1],rank:x[2],n:D.n,text:`${capFirst(ROLE_NAME[role][1])}: ${fmtN(x[0])} ${SOFTW[k]||k} vs ${def}, last ${D.n} games · ${x[2]===1?'most in the NFL':ord(x[2])+' most'}`});
   return out.sort((a,b)=>a.rank-b.rank||b.pg-a.pg).slice(0,limit);
 }
-function gameLeaks(g){ const xs=[...leaks(g.home,2),...leaks(g.away,2)]; return xs.length?`<p class="eyebrow">Leaks</p><ul class="leaks sm">${xs.map(x=>`<li>${esc(x.text)}</li>`).join('')}</ul>`:''; }
+function gameLeaks(g){ const xs=[...leaks(g.home,2),...leaks(g.away,2)]; return xs.length?`<p class="eyebrow">Soft spots</p><ul class="leaks sm">${xs.map(x=>`<li>${esc(x.text)}</li>`).join('')}</ul>`:''; }
 function matchupBlock(L,opp){
   const role=L.role&&ROLE_NAME[L.role]?L.role:null, D=role&&opp?S.d.dvr?.teams?.[opp]?.[role]:null; if(!D) return '';
   const avg=k=>{ const a=L.s?.[k]; return a&&a.length?a.reduce((x,y)=>x+y,0)/a.length:null; }, rk=r=>`<span class="rk ${r<=10?'g':r>=23?'b':'m'}">${r}</span>`;
@@ -2250,7 +2252,7 @@ function matchupBlock(L,opp){
    <p class="note" style="margin-bottom:8px">${soft.length?`${esc(opp)} is top 10 in ${esc(soft.slice(0,3).join(', '))} allowed to ${esc(ROLE_NAME[role][1])} over its last ${D.n} games.`:`${esc(opp)} hasn’t been soft on ${esc(ROLE_NAME[role][1])} lately: no top-10 ranks over its last ${D.n} games.`}</p>
    <div class="tbox" style="max-height:none"><table><thead><tr><th>Per game</th><th class="r">Him</th><th class="r">${esc(opp)} allows</th><th class="r">Rank</th></tr></thead><tbody>
    ${Object.entries(D.stats).map(([k,x])=>`<tr><td>${STATS_SHORT[k]||k}</td><td class="r">${fmtN(avg(k))}</td><td class="r">${fmtN(x[1])}</td><td class="r">${rk(x[2])}</td></tr>`).join('')}</tbody></table></div>
-   ${lk.length?`<p class="eyebrow" style="margin-top:12px">Leaks · ${esc(opp)} <span class="muted">· ${mine} hit his role</span></p><ul class="leaks">${lk.map(x=>`<li class="${x.role===role?'on':''}">${esc(x.text)}</li>`).join('')}</ul>`:''}
+   ${lk.length?`<p class="eyebrow" style="margin-top:12px">Soft spots · ${esc(opp)} <span class="muted">· ${mine} match his role</span></p><ul class="leaks">${lk.map(x=>`<li class="${x.role===role?'on':''}">${esc(x.text)}</li>`).join('')}</ul>`:''}
    <p class="note">Rank 1 means the defense allowed the most a game. Roles come from each game’s usage: the back with the most carries and targets is the lead back, the receiver with the most targets the top wideout.</p></details>`;
 }
 function lineChart(pts,fmt=v=>String(v)){
