@@ -452,6 +452,50 @@ dialog.morebox{border:0;margin:auto auto 0;width:100%;max-width:100%;border-radi
 .px.val b{color:var(--good)}.px i{font-style:normal;font-size:9px;margin-left:3px;vertical-align:1px}
 .px.off,.px.old{opacity:.55}
 @media (max-width:540px){.shop .mk{min-width:98px;max-width:112px;font-size:13px}.shop td,.shop th{padding:6px 6px}}
+/* ---------- design pass (Nov 23, the owner: less crowded, less boxy, less plain) ---------- */
+:root{--r:10px;--shadow:0 1px 2px rgba(42,33,24,.06),0 6px 20px rgba(42,33,24,.07);
+  --paw:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-8 -9.5 16 18'%3E%3Cellipse cx='0' cy='4' rx='5' ry='4.2'/%3E%3Cellipse cx='-5.3' cy='-3' rx='1.9' ry='2.6'/%3E%3Cellipse cx='-1.9' cy='-6.3' rx='1.9' ry='2.6'/%3E%3Cellipse cx='1.9' cy='-6.3' rx='1.9' ry='2.6'/%3E%3Cellipse cx='5.3' cy='-3' rx='1.9' ry='2.6'/%3E%3C/svg%3E")}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--shadow:0 0 0 1px rgba(244,234,217,.05)}}
+:root[data-theme="dark"]{--shadow:0 0 0 1px rgba(244,234,217,.05)}
+main{gap:22px}
+h2.sheet-title{font-size:34px}
+@media (max-width:540px){h2.sheet-title{font-size:31px}}
+h3{font-size:20px}
+.sheet{border:0;border-radius:14px;box-shadow:var(--shadow);padding:18px}
+.sheet .sheet{box-shadow:none;background:var(--sunk)}
+.tile{border:0;border-radius:10px}
+.tile .v{font-size:34px}
+.tile.tint-good,.tile.tint-warn,.tile.tint-bad{border:0}
+.gcard,.smash,.shk,.pk,.ncard{border:0;box-shadow:var(--shadow);border-radius:14px}
+.ncard{box-shadow:inset 5px 0 0 var(--tc),var(--shadow)}
+.howlrow,.lean,.lines div,.pklegs li{border:0}
+.mkrow{background:none;border:0;padding:0;font-size:13px}
+.lookpick b{font-size:23px}
+.lookrow{padding:12px 0}
+.empty{border-radius:12px}
+/* pick rows: the team's color as the left stripe (stripeRows), tags only on the top picks */
+.lookrow.tstripe{box-shadow:inset 4px 0 0 var(--tc);padding-left:14px}
+.sheet.today.tstripe{box-shadow:inset 5px 0 0 var(--tc),var(--shadow)}
+.lookrow .pill.t3,.today .pill.t3{display:none}
+/* round icon buttons for + Slip and Share */
+.slipadd.ico,.share.ico,.sharebtn.ico{width:32px;height:32px;padding:0;display:inline-grid;place-items:center;border-radius:50%;flex:none}
+.slipadd.ico svg,.share.ico svg,.sharebtn.ico svg{width:16px;height:16px}
+.sharebtn.ico{margin-left:0;border:1px solid var(--line);color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* dark feature sections: the night band's colors, the same in both themes */
+.sheet.dark{--surface:#1c1826;--sunk:#262031;--ink:#f4ead9;--muted:#b9ab95;--line:#3a3142;--good:#6fca8c;--bad:#f08068;--warn:#e9b25a;--turf:#55c3b7;--turf-ink:#081413;--chalk:#e69c55;--chalk-ink:#1a1209;
+  background:var(--surface);color:var(--ink);box-shadow:inset 0 3px 0 var(--eye),var(--shadow)}
+/* section titles carry a paw mark */
+.sheet>h3:first-child::before,.sheet>.controls:first-child>h3::before{content:"";display:inline-block;flex:none;width:15px;height:15px;margin-right:8px;vertical-align:-1px;background:var(--chalk);-webkit-mask:var(--paw) center/contain no-repeat;mask:var(--paw) center/contain no-repeat}
+/* news: headline and source; the summary opens on tap; 3 headlines a team, the rest one tap away */
+.news .sum,.nlist .sum{display:none}
+.news li.open>.sum,.nlist li.open>.sum{display:block;-webkit-line-clamp:unset;font-size:13.5px;color:var(--muted);margin-top:2px}
+.sumbtn,.linkbtn{all:unset;cursor:pointer;color:var(--turf);font:600 12.5px var(--body);margin-left:6px}
+.linkbtn{margin:2px 0 0}
+.sumbtn:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--chalk);outline-offset:2px}
+.ncard:not(.all) .xtra{display:none}
+.news{gap:12px}
+.tiles.t3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tiles.t3 .tile{padding:8px 10px}.tiles.t3 .tile .v{font-size:25px}
 </style>
 
 <header class="top">
@@ -556,7 +600,7 @@ function route(){
   if($('#morebox').open) $('#morebox').close();
   const app=$('#app');
   if(S.lazyP&&LAZY_VIEWS.has(S.view)){ app.innerHTML='<div class="empty">Loading…</div>'; return; }
-  try{ app.innerHTML=VIEWS[S.view](); AFTER[S.view]?.(); foldify(); }catch(e){ app.innerHTML=`<div class="empty">This section could not be drawn (${esc(e.message)}).</div>`; console.error(e); }
+  try{ app.innerHTML=VIEWS[S.view](); AFTER[S.view]?.(); foldify(); stripeRows(); }catch(e){ app.innerHTML=`<div class="empty">This section could not be drawn (${esc(e.message)}).</div>`; console.error(e); }
   const hd=$('header.top'); document.documentElement.style.setProperty('--hdr',((getComputedStyle(hd).position==='sticky'?hd.offsetHeight:0)+12)+'px');
   window.scrollTo(0,0);
   if(anchor){ openFoldAt(anchor); document.getElementById(anchor)?.scrollIntoView(); }
@@ -595,7 +639,7 @@ function distSVG(rows,cut,colA,colB,fmtX,tipX,ticks){
 /* ---------- share cards ---------- */
 const SITE='coyotecallsit.com';
 const SHARE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
-const shareBtn=key=>`<button type="button" class="share" data-share="${key}">${SHARE_ICON}Share</button>`;
+const shareBtn=key=>`<button type="button" class="share ico" data-share="${key}" aria-label="Share this pick" title="Share">${SHARE_ICON}</button>`;
 const CARD={band:'#1c1826',ink:'#f4ead9',muted:'#b9ab95',eye:'#e6a25a',tile:'#2a2333',mesa:'#2f2536',mesa2:'#3e3044',
   pill:{'Pack hunt':'#e9b25a','Stalk':'#55c3b7','Edge':'#6fca8c','Thin edge':'#e9b25a','Below break-even':'#f08068','Special line':'#55c3b7','Ambush spot':'#e9b25a','Primed':'#55c3b7','Stalking':'#b9ab95','Breaking':'#f08068'}};
 const etTime=iso=>iso?new Date(iso).toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' ET':'';
@@ -1263,7 +1307,7 @@ function howlRow(h){
 const liveHowls=()=>(S.d.bestbets?.howls||[]).filter(h=>{ const g=slateGame(h.game_id); return !g?.kickoff_utc||new Date(g.kickoff_utc)>new Date(); });
 function howlSection(n){
   const A=liveHowls(); if(!A.length) return ''; const H=showN('howl',A,n);
-  return `<section class="sheet"><h3>Biggest howls</h3><ul class="howllist">${H.map(howlRow).join('')}</ul>${moreBtn('howl',A,n,'howls')}</section>`;
+  return `<section class="sheet dark"><h3>Biggest howls</h3><ul class="howllist">${H.map(howlRow).join('')}</ul>${moreBtn('howl',A,n,'howls')}</section>`;
 }
 
 /* ---------- Beat the Close ---------- */
@@ -1427,7 +1471,7 @@ function staleCard(){
      <div class="lookpick"><b>${x.side==='over'?'Over':'Under'} ${x.line}</b> ${esc((x.label||x.stat).toLowerCase())} at <b>${esc(x.book_name)} ${shopOdds(x.odds)}</b></div>
      <div class="mkrow"><span class="muted">${x.line!==x.cons?`Most books ${x.cons}${oth.length?` (others at ${oth.join(', ')})`:''}`:`Same number as the books, better price`} · the books’ consensus gives this ${pct(x.fair,0)} · worth +${(x.ev*100).toFixed(1)}% per $1${old}</span></div></li>`; };
   const body=!D?'<div class="empty">The first check runs with the next update.</div>':xs.length?`<ul class="howllist">${xs.slice(0,12).map(row).join('')}</ul>`:'<div class="empty">No stale lines right now: the books agree on every prop the hub shows.</div>';
-  return `<section class="sheet" id="sec-stalelines"><h3>Stale lines</h3><p class="note">Found automatically every update: a book whose number or price is behind the other books, priced at the books’ own consensus. Listed when the bet there is worth ${pct(D?.bar??.03,0)}+ per $1, <b>Stale line</b> at 5%+. Each one is logged the first time it shows up and graded at that book’s price. Prices move fast: check the book before you bet.${rec?` Record so far: ${rec}.`:''}</p>${body}</section>`;
+  return `<section class="sheet dark" id="sec-stalelines"><h3>Stale lines</h3><p class="note">Found automatically every update: a book whose number or price is behind the other books, priced at the books’ own consensus. Listed when the bet there is worth ${pct(D?.bar??.03,0)}+ per $1, <b>Stale line</b> at 5%+. Each one is logged the first time it shows up and graded at that book’s price. Prices move fast: check the book before you bet.${rec?` Record so far: ${rec}.`:''}</p>${body}</section>`;
 }
 function shopGames(){ const now=new Date().toISOString(); return Object.values(S.d.lineshop?.games||{}).filter(G=>G.starts&&G.starts>now).sort((a,b)=>a.starts.localeCompare(b.starts)); }
 VIEWS.shop=()=>{
@@ -1517,7 +1561,7 @@ const TAGCLS={'Edge':'t1','Thin edge':'t3','Below break-even':'t4','Special line
 const live=c=>!c.kickoff||new Date(c.kickoff)>new Date();
 const LOOKCLS={'Strong look':'t1','Look':'t2','Lean':'t3'};
 /* share a pick on X (Nov 22): the game's own page rides along, so its preview picture shows */
-const xShare=(txt,gid)=>`<a class="sharebtn" href="https://x.com/intent/post?text=${encodeURIComponent(txt+' 🐺')}&url=${encodeURIComponent(gamePage(slateGame(gid)))}" target="_blank" rel="noopener" aria-label="Share on X">Share</a>`;
+const xShare=(txt,gid)=>`<a class="sharebtn ico" href="https://x.com/intent/post?text=${encodeURIComponent(txt+' 🐺')}&url=${encodeURIComponent(gamePage(slateGame(gid)))}" target="_blank" rel="noopener" aria-label="Share on X" title="Share on X">${SHARE_ICON}</a>`;
 /* the look card's pick line (Nov 22): bigger than the rest, so the pick reads first */
 function gameProps(gid,{title=true}={}){
   const g=slateGame(gid); const looks=(S.d.proplooks||[]).find(x=>x.game_id===gid)?.looks||[];
@@ -1534,7 +1578,7 @@ function betCard(c,i){
   const val=c.value==null?'—':c.price?`$${c.value.toFixed(2)}`:c.value.toFixed(2);
   return `<div class="sheet ${tierBar(c.tag)}" style="gap:8px;${tintBg(c.value,1,1.15,14)}"><div class="controls" style="justify-content:space-between"><span class="eyebrow">#${i+1} · ${esc(c.matchup)} · ${esc(c.kickoff?kick({kickoff_utc:c.kickoff}):'')}</span><span class="pill ${TAGCLS[c.tag]||''}">${esc(tw(c.tag))}</span></div>
    <div style="font-family:var(--display);font-weight:700;font-size:24px;line-height:1.1">${esc(c.label)}</div>${clvChip(c)?`<div>${clvChip(c)}</div>`:''}
-   <div class="tiles"><div class="tile"><span class="k">Chance to hit</span><span class="v">${pct(c.p)}</span></div>
+   <div class="tiles t3"><div class="tile"><span class="k">Chance to hit</span><span class="v">${pct(c.p)}</span></div>
     <div class="tile"><span class="k">Needs</span><span class="v">${pct(c.breakeven)}</span><span class="k">${c.price?`at ${fx(c.price)}`:'per leg, 2-pick entry'}</span></div>
     <div class="tile"><span class="k">${c.price?'Back per $1':'Per-leg value'}</span><span class="v ${c.value>=1?'good':'bad'}">${val}</span></div></div>
    <ul class="reasons">${c.reasons.slice(0,2).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
@@ -1546,7 +1590,6 @@ VIEWS.bets=()=>{
   const games=(S.d.slate?.games||[]).filter(g=>g.status==='upcoming');
   S.projGame=S.projGame&&games.some(g=>g.game_id===S.projGame)?S.projGame:(games[0]?.game_id);
   return `<section><p class="kicker">Pounce</p><h2 class="sheet-title">Best bets</h2></section>
-  <section class="sheet"><p class="tierkey"><span>Strength:</span><span class="pill t1">Strong</span><span class="pill t2">Solid</span><span class="pill t3">Thin</span><span class="pill t4">Below break-even</span></p></section>
   ${howlSection(5)}
   <section><h3 style="margin-bottom:10px">Best value</h3><div class="grid2">${showN('best',B.best.filter(live),4).map(betCard).join('')||'<div class="empty">Every ranked pick has kicked off. The next daily update adds new ones.</div>'}</div>${moreBtn('best',B.best.filter(live),4,'value picks')}</section>
   <div id="sec-smash" style="margin-top:28px">${VIEWS.smash()}</div>
@@ -1592,22 +1635,8 @@ VIEWS.week=()=>{
    ${todayRow()}
    ${slateBoard()}
    <div class="rpair">${receipts()}${xReceipts()}</div>
-   ${S.d.recap?.week?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>The Morning After: week ${S.d.recap.week}</h3><a href="#recap">Report card</a></div><p class="note">${esc(recapLine(S.d.recap))}</p></section>`:''}
-   ${film?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Featured sim film</h3><a href="#videos">All ${(S.d.videos||[]).length} films</a></div>
-    <div class="film">${vBox(film)}
-    <div style="display:flex;flex-direction:column;gap:8px"><p class="kicker">${esc(film.title)}</p><div style="font-family:var(--display);font-weight:700;font-size:34px;line-height:1">${film.away} ${film.modal.away} – ${film.home} ${film.modal.home}</div>
-    <p class="note">The projected final (the most common score at the sims’ typical margin and total), played out snap by snap.</p>${slateGame(film.game_id)?`<a href="#${gid2h(film.game_id)}">Open the game</a>`:''}</div></div></section>`:''}
-   ${(S.d.smash?.players||[]).length?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>All Out Ambush: due this week</h3><a href="#smash">See the full list</a></div><ol class="reasons">${S.d.smash.players.slice(0,3).map(p=>`<li><b>${esc(p.player)}</b> <span class="note">${esc(p.team)} vs ${esc(p.opp)} · ${esc(p.label.toLowerCase())}: ${p.recent_mean} lately vs ${p.base_mean} normal · Ambush ${Math.round(p.score)} (${esc(p.tier)})</span></li>`).join('')}</ol></section>`:''}
-   ${PACK_ON&&(S.d.pack?.top||[]).filter(live).length?`<section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Pack Hunt: picks that hunt together</h3><a href="#pack">Every hunt</a></div><ol class="reasons">${S.d.pack.top.filter(live).slice(0,3).map(x=>`<li><b>${x.leg_rows.map(l=>`${esc(l.player)} ${l.dir==='more'?'More':'Less'} ${l.line}`).join(' + ')}</b> <span class="note">${esc(x.matchup)} · both hit ${pct(x.joint)} vs ${pct(x.indep)} if unrelated · $${x.value.toFixed(2)} back per $1 at 3x</span></li>`).join('')}</ol></section>`:''}
-   <section class="sheet"><h3>Model leans</h3>
-   ${leans.length?`<div class="cards">${leans.map(g=>`<a class="lean card-link" href="#${gid2h(g.game_id)}" style="text-decoration:none;color:inherit"><span class="pill ${g.confidence==='strong lean'?'good':'turf'}">${esc(g.confidence)}</span><b>${esc(g.lean)}</b><span class="note">${esc(g.away)} @ ${esc(g.home)} · edge ${Math.abs(g.spread_edge).toFixed(1)} pts</span></a>`).join('')}</div>`
-     :'<p class="note">No game has a 3-point gap between the ratings and the line this week.</p>'}</section>
-   ${(S.d.bestbets?.best||[]).filter(c=>!c.kickoff||new Date(c.kickoff)>new Date()).length?`<section class="sheet"><h3>Top value right now</h3><ol class="reasons">${S.d.bestbets.best.filter(c=>!c.kickoff||new Date(c.kickoff)>new Date()).slice(0,3).map(c=>`<li><b>${esc(c.label)}</b> <span class="note">${esc(c.matchup)} · ${pct(c.p)} to hit · ${c.price?'$'+c.value.toFixed(2)+' back per $1':'per-leg value '+c.value.toFixed(2)}</span></li>`).join('')}</ol><a href="#bets">See all best and safest bets</a></section>`:''}
-   <section class="sheet"><h3>Headlines</h3>${news.length?`<ul class="news">${news.map(newsItem).join('')}</ul>`:'<p class="note">No headlines saved yet. The daily update adds injury and lineup news here.</p>'}
-   ${S.d.news?.updated?`<p class="note">Headlines gathered ${esc(ago(S.d.news.updated))}.</p>`:''}</section>
-   <section class="sheet packcard"><h3>Welcome to the pack</h3>
-    <p>The coyote doesn’t chase. It watches the line, runs every game hundreds of thousands of times, and only howls when the edge is real. You hunt with us now, and when the hunt is done, the pack eats together.</p>
-    <p class="note">Every call is logged before kickoff and never erased. <a href="#about">About the pack</a> · <a href="#record">Track record</a></p></section>`;
+   <section class="sheet"><div class="controls" style="justify-content:space-between"><h3>Headlines</h3><a href="#news">All news</a></div>${news.length?`<ul class="news">${news.slice(0,3).map(newsItem).join('')}</ul>`:'<p class="note">No headlines saved yet. The daily update adds injury and lineup news here.</p>'}</section>
+   <p class="note" style="text-align:center">Every call is logged before kickoff and never erased. <a href="#about">About the pack</a> · <a href="#record">Track record</a></p>`;
 };
 const aboutView=()=>`<section class="about" style="display:flex;flex-direction:column;gap:18px">
   <div><p class="kicker">About Coyote Calls</p><h2 class="sheet-title">Welcome to the pack</h2>
@@ -1697,7 +1726,7 @@ function outView(g){
   const team=([t,l])=>`<div class="outteam"><div class="outhead">${chip(t)}<b>${esc(nick(t))}</b></div>${l.length?`<ul class="outs">${l.map(p=>`<li><span class="pill ${p.status==='Questionable'?'warn':'bad'}">${esc(p.status)}</span><span>${esc(p.name)}${p.pos?` <span class="muted">${esc(p.pos)}</span>`:''}${p.injury?` <span class="muted">· ${esc(p.injury)}</span>`:''}</span></li>`).join('')}</ul>`:'<p class="note">No one listed.</p>'}</div>`;
   return `${L.map(team).join('')}${!any&&g.status==='upcoming'?'<p class="note">Game statuses come out two days before kickoff (Friday for Sunday games).</p>':''}`;
 }
-function newsItem(n){ return `<li><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="note">${esc(n.summary||'')}</span><span class="note">${esc(n.source||'')}${n.date?' · '+esc(newsDate(n.date)):''}</span></li>`; }
+function newsItem(n){ return `<li><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="note">${esc(n.source||'')}${n.date?' · '+esc(newsDate(n.date)):''}${n.summary?'<button type="button" class="sumbtn" aria-expanded="false">Summary</button>':''}</span>${n.summary?`<span class="sum">${esc(n.summary)}</span>`:''}</li>`; }
 function gameCard(g){
   const s=sim(g.game_id); const v=(S.d.videos||[]).some(x=>x.game_id===g.game_id);
   const wx=g.weather||{}; const wtxt=wx.status==='ok'?`${wx.temp_f}°F · wind ${wx.wind_mph??'?'} mph${wx.precip_pct>=30?` · ${wx.precip_pct}% precip`:''}`:wx.status==='indoors'?'Indoors':'Weather pending';
@@ -2046,7 +2075,9 @@ function slipLoad(){ try{ const v=JSON.parse(localStorage.getItem(SLIPKEY)||'nul
 function slipSave(){ try{ localStorage.setItem(SLIPKEY,JSON.stringify({legs:S.slip,entry:S.entry,stake:S.stake})); }catch(e){} }
 const slipKey=l=>`${l.name}|${l.stat}`;
 const inSlip=l=>(Array.isArray(l)?l:[l]).every(x=>S.slip.some(y=>slipKey(y)===slipKey(x)&&y.dir===x.dir));
-const slipBtn=(leg,label='+ Slip')=>{ const on=inSlip(leg); return `<button type="button" class="slipadd${on?' in':''}" data-slip="${esc(JSON.stringify(leg))}" aria-label="Add to prop sheet">${on?'✓ In slip':esc(label)}</button>`; };
+const SLIP_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="sr">Add to slip</span>',
+  SLIP_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="sr">In slip</span>';
+const slipBtn=(leg,label='+ Slip')=>{ const on=inSlip(leg), ico=label==='+ Slip'; return `<button type="button" class="slipadd${on?' in':''}${ico?' ico':''}" data-slip="${esc(JSON.stringify(leg))}" aria-label="Add to prop sheet" title="Add to slip">${ico?(on?SLIP_ON:SLIP_ICON):on?'✓ In slip':esc(label)}</button>`; };
 function slipEnrich(l){
   const L=Object.values(S.d.logs?.players||{}).find(x=>x.name===l.name);
   const o={name:l.name,stat:l.stat,line:+l.line,dir:l.dir==='less'?'less':'more',team:l.team||L?.team||'',pos:l.pos||L?.pos||'',gid:l.gid||null};
@@ -2069,7 +2100,7 @@ window.addEventListener('hashchange',()=>setTimeout(slipUpdate,0));
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-slip]');
   if(b){ e.preventDefault(); let legs; try{ legs=JSON.parse(b.dataset.slip); }catch(err){ return; }
-    slipAdd(Array.isArray(legs)?legs:[legs]); b.classList.add('in'); b.textContent='✓ In slip'; return; }
+    slipAdd(Array.isArray(legs)?legs:[legs]); b.classList.add('in'); if(b.classList.contains('ico')) b.innerHTML=SLIP_ON; else b.textContent='✓ In slip'; return; }
   if(e.target.closest('#slipchip')){ if(location.hash==='#props') document.getElementById('sec-slip')?.scrollIntoView({behavior:'smooth',block:'start'});
     else { S.scrollSlip=true; location.hash='props'; } }
 });
@@ -2160,14 +2191,14 @@ const DIVS=[['AFC East',['BUF','MIA','NE','NYJ']],['AFC North',['BAL','CIN','CLE
  ['NFC East',['DAL','NYG','PHI','WAS']],['NFC North',['CHI','DET','GB','MIN']],['NFC South',['ATL','CAR','NO','TB']],['NFC West',['ARI','LA','SF','SEA']]];
 const okUrl=u=>/^https?:\/\//i.test(u||'');
 function newsDate(d){ if(!d) return ''; const t=new Date(d+'T12:00:00'); return isNaN(t)?'':t.toLocaleDateString([], {month:'short',day:'numeric'}); }
-function headline(n){ return okUrl(n.url)?`<li><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="note">${esc(n.source||'')}${n.date?' · '+esc(newsDate(n.date)):''}</span>${n.summary?`<span class="sum">${esc(n.summary)}</span>`:''}</li>`:''; }
+function headline(n){ return okUrl(n.url)?`<li><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a><span class="note">${esc(n.source||'')}${n.date?' · '+esc(newsDate(n.date)):''}${n.summary?'<button type="button" class="sumbtn" aria-expanded="false">Summary</button>':''}</span>${n.summary?`<span class="sum">${esc(n.summary)}</span>`:''}</li>`:''; }
 function teamCard(c){
   const T=(S.d.teams||[]).find(t=>t.team===c)||{}; const items=((S.d.team_news?.teams||{})[c]||[]).filter(n=>okUrl(n.url)).slice(0,5);
   const g=(S.d.slate?.games||[]).find(x=>x.status==='upcoming'&&(x.away===c||x.home===c));
   const next=g?`Next: ${g.away===c?'@ '+g.home:'vs '+g.away} · ${esc(kick(g))}`:'';
   return `<div class="ncard" id="news-${c}" style="--tc:${TEAM[c]?.[2]||'var(--line)'}"><div class="nh"><b>${esc((T.city?T.city+' ':'')+(T.name||TEAM[c]?.[0]||c))}</b><span class="note">${T.w!=null?`${T.w}-${T.l}${T.t?'-'+T.t:''}`:''}</span></div>
    ${next?`<span class="eyebrow">${next}</span>`:''}
-   ${items.length?`<ul class="nlist">${items.map(headline).join('')}</ul>`:'<p class="note">No fresh headlines yet. The morning update adds them.</p>'}</div>`;
+   ${items.length?`<ul class="nlist">${items.map((n,i)=>i<3?headline(n):headline(n).replace('<li>','<li class="xtra">')).join('')}</ul>${items.length>3?`<button type="button" class="linkbtn" data-xtra>${items.length-3} more</button>`:''}`:'<p class="note">No fresh headlines yet. The morning update adds them.</p>'}</div>`;
 }
 VIEWS.news=()=>{
   const TN=S.d.team_news||{}, lg=(S.d.news?.items||[]).filter(n=>okUrl(n.url));
@@ -2176,7 +2207,7 @@ VIEWS.news=()=>{
   const opts=DIVS.map(([d,ts])=>`<optgroup label="${d}">${ts.map(c=>`<option value="${c}"${c===pick?' selected':''}>${esc(((S.d.teams||[]).find(t=>t.team===c)||{}).name||TEAM[c]?.[0]||c)}</option>`).join('')}</optgroup>`).join('');
   return `<section><p class="kicker">The Wire</p><h2 class="sheet-title">News</h2></section>
   <section class="sheet"><div class="controls" style="justify-content:space-between"><label class="fld" style="flex:0 1 360px">Show<select id="nteam"><option value="">All 32 teams</option>${opts}</select></label></div></section>
-  ${lg.length&&!pick?`<section class="sheet"><h3>Around the league</h3><ul class="news">${lg.slice(0,8).map(newsItem).join('')}</ul></section>`:''}
+  ${lg.length&&!pick?`<section class="sheet dark"><h3>Around the league</h3><ul class="news">${lg.slice(0,8).map(newsItem).join('')}</ul></section>`:''}
   ${shockSection(pick)}
   ${buzzSection(pick)}
   ${(pick?[['',[pick]]]:DIVS).map(([d,ts])=>`<section>${d?`<p class="divhead">${d}</p>`:''}<div class="ncards">${ts.map(teamCard).join('')}</div></section>`).join('')}`;
@@ -2185,7 +2216,7 @@ AFTER.news=()=>{
   $('#nteam')?.addEventListener('change',e=>{ try{ localStorage.setItem('cc-team',e.target.value); }catch(err){} route(); });
   const row=$('#nteam')?.closest('.controls');
   if(row){ const b=document.createElement('button'); b.type='button'; b.className='share'; b.id='foldall';
-    const sync=()=>{ b.textContent=$$('[data-fold-id]').some(x=>!x.classList.contains('folded'))?'Collapse all':'Expand all'; };
+    const sync=()=>{ b.textContent=$$('[data-fold-id]').some(x=>x.classList.contains('folded'))?'Expand all':'Collapse all'; };
     b.addEventListener('click',()=>{ const close=b.textContent==='Collapse all'; $$('[data-fold-id]').forEach(x=>setFold(x,!close,true)); sync(); });
     row.appendChild(b); setTimeout(sync); document.addEventListener('foldchange',sync); }
 };
@@ -2221,9 +2252,9 @@ VIEWS.videos=()=>{
     const extra=g.k==='this'&&played?` ${played} of ${g.xs.length} played.`:'';
     return `<header class="wkband"><div class="wkno"><span>Week</span><b>${g.w}</b></div>
      <div class="wkmeta"><span class="wktag">${WKS[g.k][0]}</span><span class="wkdates">${dates?esc(dates)+' · ':''}${g.xs.length} film${g.xs.length===1?'':'s'}</span><span class="note">${WKS[g.k][1]}${extra}</span></div></header>`; };
-  return `<section><p class="kicker">Sim Film</p><h2 class="sheet-title">Watch the projected game</h2><p class="lede">Each video plays the projected final from ${(500000).toLocaleString()} simulations, one play at a time: the most common score at the sims’ typical margin and total, so a 10-point favorite’s film looks like a 10-point game. Every game gets one, made automatically, and a video is remade if the line moves enough to change the projected final. The hub keeps last week, this week and next week.</p></section>
+  return `<section><p class="kicker">Sim Film</p><h2 class="sheet-title">Watch the projected game</h2><p class="lede">Each film plays the projected final from ${(500000).toLocaleString()} sims, one play at a time. Every game gets one, remade if the line moves enough to change the projected final. Last week’s films are folded under their week.</p></section>
   ${groups.length>1?`<nav class="wkjump" aria-label="Jump to a week">${groups.map(g=>`<button type="button" class="wkbtn wk-${g.k}" data-wk="${g.w}"><i></i>${WKS[g.k][0]} · Week ${g.w}<span>${g.xs.length}</span></button>`).join('')}</nav>`:''}
-  ${groups.length?groups.map(g=>`<section class="wksec wk-${g.k}" id="wk-${g.w}" aria-label="Week ${g.w}">${band(g)}<div class="grid2">${g.xs.map(vCard).join('')}</div></section>`).join(''):'<div class="empty">No videos yet.</div>'}`;
+  ${groups.length?groups.map(g=>`<section class="wksec wk-${g.k}" id="wk-${g.w}" aria-label="Week ${g.w}">${band(g)}<div class="grid2">${(g.k==='last'?g.xs:showN('films-'+g.k,g.xs,4)).map(vCard).join('')}</div>${g.k==='last'?'':moreBtn('films-'+g.k,g.xs,4,'films')}</section>`).join(''):'<div class="empty">No videos yet.</div>'}`;
 };
 AFTER.videos=()=>{
   $$('[data-wk]').forEach(b=>b.onclick=()=>{ const t=document.getElementById('wk-'+b.dataset.wk); if(t?.classList.contains('folded')) setFold(t,true,true); t?.scrollIntoView({behavior:'smooth',block:'start'}); });
@@ -2366,7 +2397,7 @@ const FOLDS={
   week:[{sel:'.slwin',id:el=>'sl-'+el.dataset.win,closed:el=>el.dataset.done==='1',count:'.slrow',unit:'games'}],
   news:[{sel:'section.sheet',head:/^Around the league/,id:'n-league',count:'.news li',unit:'headlines'},
         {sel:'section',head:/^News Shock/,id:'n-shock',closed:true,count:'.shk',unit:'games'},
-        {sel:'section',head:/^(AFC|NFC) /,id:el=>'n-'+el.firstElementChild.textContent.trim(),count:'.ncard',unit:'teams'}],
+        {sel:'section',head:/^(AFC|NFC) /,id:el=>'n-'+el.firstElementChild.textContent.trim(),closed:true,count:'.ncard',unit:'teams'}],
   bets:[{sel:'section.sheet',head:/^How to read this/,id:'b-how',closed:true},
         {sel:'section',head:/^Best props by game/,id:'b-props',closed:true,count:'.cards>.sheet',unit:'games'},
         {sel:'section.sheet',head:/^Safest/,id:'b-safest',count:'tbody tr',unit:'picks'},
@@ -2385,7 +2416,19 @@ const FOLDS={
           {sel:'.foldgroup',id:'r-how',closed:true}],
   players:[{sel:'.sheet',head:/^What the columns mean/,id:'t-cols',closed:true}],
 };
+/* merged tabs (Nov 23): a tab holding an old view's sections gets that view's folds too (they were keyed to the old names) */
+FOLDS.game=[...(FOLDS.game||[]),...FOLDS.videos]; FOLDS.about=[...(FOLDS.about||[]),...FOLDS.record]; FOLDS.bets=[...(FOLDS.bets||[]),...(FOLDS.smash||[]),...(FOLDS.pack||[])];
 const FOLD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+/* design pass (Nov 23): each pick row takes its team's color as its left stripe, read from the row's own team chip
+   (the secondary color inside dark sections, where a navy or black stripe would vanish) */
+function stripeRows(){
+  $$('.lookrow,.sheet.today',$('#app')).forEach(r=>{ const c=r.querySelector('.tchip'), t=c&&c.textContent.trim(); if(!t||!TEAM[t]) return;
+    r.style.setProperty('--tc',r.closest('.dark')?TEAM[t][2]:TEAM[t][1]); r.classList.add('tstripe'); });
+}
+document.addEventListener('click',e=>{
+  const s=e.target.closest('.sumbtn'); if(s){ const li=s.closest('li'), open=!li.classList.contains('open'); li.classList.toggle('open',open); s.setAttribute('aria-expanded',open?'true':'false'); s.textContent=open?'Hide':'Summary'; return; }
+  const x=e.target.closest('[data-xtra]'); if(x){ x.closest('.ncard')?.classList.add('all'); x.remove(); }
+});
 function foldState(id){ try{ const v=localStorage.getItem('cc-fold:'+id); return v===null?null:v==='1'; }catch(e){ return null; } }
 function setFold(el,open,remember){
   el.classList.toggle('folded',!open);
