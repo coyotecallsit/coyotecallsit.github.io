@@ -1001,7 +1001,7 @@ async function drawSlipCard(c){
   });
   x.fillStyle=C.mesa2; x.fillRect(M,1240,W-2*M,2);
   x.font=`700 34px ${D}`; x.fillStyle=C.eye; x.fillText(SITE,M,1300);
-  x.textAlign='right'; x.font=`500 25px ${B}`; x.fillStyle=C.muted; x.fillText('Graded in public · 21+ · 1-800-GAMBLER',W-M,1298); x.textAlign='left';
+  x.textAlign='right'; x.font=`500 25px ${B}`; x.fillStyle=C.muted; x.fillText(c.nograde?'21+ · 1-800-GAMBLER':'Graded in public · 21+ · 1-800-GAMBLER',W-M,1298); x.textAlign='left';
   return cv;
 }
 /* ---------- the slate: every game of the week by kickoff window (The Prowl), and the Sunday Slate card for X ---------- */
@@ -2525,7 +2525,15 @@ function drawSlip(){
    ${same?'<p class="lsub" style="margin:10px 0 0">Some picks share a game. The math treats them as unrelated.</p>':''}
    ${ready?`<p class="lsub" style="margin:8px 0 0"><b style="color:#e9b25a">Loaded</b> clears the ${pct(bar,1)} per pick this entry needs. <b style="color:#c9b89c">Half-cocked</b>: right side, not enough. <b style="color:#f08068">Dud</b>: the hub leans the other way.</p>`:''}
    <p class="lsub rg" style="margin:8px 0 0;opacity:.85">21+ only. For entertainment, not betting advice. Gambling problem? Call <a href="tel:18004262537">1-800-GAMBLER</a>.</p>
-   <div class="pacts"><label class="lsub">Stake $ <input class="lline" id="ps-stake" type="number" min="1" step="1" inputmode="decimal" value="${stake}" aria-label="Stake"></label><button type="button" class="share" id="ps-clear">Clear</button></div></div>`;
+   <div class="pacts"><label class="lsub">Stake $ <input class="lline" id="ps-stake" type="number" min="1" step="1" inputmode="decimal" value="${stake}" aria-label="Stake"></label><span style="display:flex;gap:8px"><button type="button" class="share" id="ps-share">Share</button><button type="button" class="share" id="ps-clear">Clear</button></span></div></div>`;
+  $('#ps-share',el)?.addEventListener('click',e=>{
+    const cl=legs.map((l,i)=>({name:l.name,arrow:l.dir==='more'?'↑':'↓',pick:`${l.line} ${PSTAT[l.stat]||l.stat}`,sub:[[l.team,l.pos].filter(Boolean).join(' '),l.matchup].filter(Boolean).join(' · '),
+      state:states[i],verdict:VSTATE[states[i]][0],pctTxt:l.p==null?'':pct(l.p,0),odds:l.p==null?'':amer(l.p),p:l.p}));
+    const all=ps.reduce((a,p)=>a*p,1), kk=Math.max(2,Math.round(1/all)), oddsTxt=all>=.4?`in about ${pct(all,0)} of sims`:`in about 1 of every ${kk} sims`;
+    const short=l=>`${l.name} ${l.dir==='more'?'O':'U'}${l.line} ${SHORTSTAT[l.stat]||(PSTAT[l.stat]||l.stat).toLowerCase()}`;
+    const ms=[...new Set(legs.map(l=>l.matchup).filter(Boolean))], title=`My ${n}-pick`, body=legs.map(l=>`• ${short(l)}${l.p==null?'':` (${pct(l.p,0)})`}`).join('\n');
+    const post=fitPost([`${title} 🐺\n\n${body}\n\nAll ${n} hit ${oddsTxt}.\nhttps://${SITE}\n#NFL\n21+ · 1-800-GAMBLER`,`${title} 🐺\n\n${body}\n\nAll ${n} hit ${oddsTxt}.\n#NFL\n21+ · 1-800-GAMBLER`,`${title} 🐺\n\n${body}\n21+`]);
+    shareCard({spec:{title,sub:ms.length===1?ms[0]:`${ms.length} games`,pill:ready?entryName(k):`${n} picks`,legs:cl,nograde:true},text:title,post},e.currentTarget,drawSlipCard); });
   $('#ps-entry',el)?.addEventListener('change',e=>{ S.entry=e.target.value; if($('#pe')) $('#pe').value=S.entry; slipSave(); drawSlip(); });
   $$('[data-li]',el).forEach(x=>x.addEventListener('change',()=>{ const v=parseFloat(x.value); if(!isNaN(v)){ S.slip[+x.dataset.li].line=v; slipSave(); } drawSlip(); }));
   $$('[data-di]',el).forEach(x=>x.addEventListener('click',()=>{ const l=S.slip[+x.dataset.di]; l.dir=l.dir==='more'?'less':'more'; slipSave(); drawSlip(); }));
