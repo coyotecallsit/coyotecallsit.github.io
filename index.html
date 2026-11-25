@@ -1011,16 +1011,18 @@ const etNum=(iso,o)=>parseInt(new Date(iso).toLocaleString('en-US',{timeZone:'Am
 const holidayOf=iso=>{ if(!iso) return null; const m=etNum(iso,{month:'numeric'}), d=etNum(iso,{day:'numeric'}), wd=dayName(iso);
   return m===11&&wd==='Thursday'&&d>=22&&d<=28?'Thanksgiving':m===11&&wd==='Friday'&&d>=23&&d<=29?'Black Friday':m===12&&d===25?'Christmas':null; };
 const HOL_SPLIT=new Set(['Thanksgiving','Christmas']), HOLTAG={Thanksgiving:'#Thanksgiving','Black Friday':'#BlackFriday',Christmas:'#Christmas'};
+const splitDay=iso=>HOL_SPLIT.has(holidayOf(iso))||dayName(iso)==='Saturday';   // a slip per kickoff window
 const kickWindow=iso=>{ const h=etNum(iso,{hour:'numeric',hourCycle:'h23'}); return h>=19?'Night':h>=15?'Late':'Early'; };
 function nextDayGames(){
   const now=new Date(), day=iso=>new Date(iso).toLocaleDateString('en-US',{timeZone:'America/New_York'});
   const up=(S.d.slate?.games||[]).filter(g=>g.status==='upcoming'&&g.kickoff_utc&&new Date(g.kickoff_utc)>now).sort((a,b)=>a.kickoff_utc.localeCompare(b.kickoff_utc));
-  if(!up.length) return []; const f=up[0].kickoff_utc, split=HOL_SPLIT.has(holidayOf(f));
+  if(!up.length) return []; const f=up[0].kickoff_utc, split=splitDay(f);
   return up.filter(g=>day(g.kickoff_utc)===day(f)&&(!split||kickWindow(g.kickoff_utc)===kickWindow(f)));
 }
 function slotName(gs){
   const g=gs[gs.length-1], d=new Date(g.kickoff_utc), wd=d.toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'long'}), hol=holidayOf(g.kickoff_utc);
   if(hol) return HOL_SPLIT.has(hol)?`${hol} ${kickWindow(g.kickoff_utc)}`:hol;   // Thanksgiving Early / Late / Night, Black Friday
+  if(wd==='Saturday') return `Saturday ${kickWindow(g.kickoff_utc)}`;   // Saturday Late, Saturday Night
   const hr=parseInt(d.toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hourCycle:'h23'}),10);
   return gs.length===1&&hr>=19?({Thursday:'TNF',Sunday:'SNF',Monday:'MNF'}[wd]||wd):wd;
 }
@@ -1080,7 +1082,7 @@ function gradedSlipPost(){
   const call=h.result==='win'?vary([`All ${n} cashed 🎯 The pack eats.`,`Clean sweep 🎯 every leg hit.`],sd)
     :miss.length===1?vary([`One leg short. ${missTxt(miss[0])}. That one stings.`,`So close. ${missTxt(miss[0])}, and that was the only miss.`],sd)
     :`${hits} of ${n}. Not our night. ${miss.map(missTxt).join(', ')}.`;
-  const ngs=nextDayGames(), nd=ngs[0], next=nd?(holidayOf(nd.kickoff_utc)?` Next up: the ${slotName(ngs)} slip.`:` Next slip drops ${dayName(nd.kickoff_utc)}.`):'';
+  const ngs=nextDayGames(), nd=ngs[0], next=nd?(holidayOf(nd.kickoff_utc)||splitDay(nd.kickoff_utc)?` Next up: the ${slotName(ngs)} slip.`:` Next slip drops ${dayName(nd.kickoff_utc)}.`):'';
   const hG=(h.games||[]).map(slateGame).filter(Boolean), nt=/^(TNF|SNF|MNF) /.exec(h.title||'');
   const hh=Object.keys(HOLTAG).find(x=>(h.title||'').startsWith(x));
   const hT=hG.length?HTAG(hG):nt?`#NFL #${nt[1]}`:hh?`#NFL ${HOLTAG[hh]}${/^Thanksgiving Night/.test(h.title)?' #TNF':''}`:HTAG(null);
@@ -2516,7 +2518,7 @@ AFTER.about=()=>{ if(!S.public) AFTER.ledger(); };
 
 /* track record */
 const KINDS=[['best','Best value','The top picks by return per $1 each morning, logged only at break-even or better'],['safest','Safest','Top 10 most likely to hit'],['lean','Model leans',''],
- ['mlook','Prop looks vs market',''],['stale','Stale lines','A book behind the rest, priced at the books’ consensus: logged the first time it shows up, graded at that book’s price'],['smash','All Out Ambush','Due players at their recent-form line; due offenses at the market team total'],['pack','Pack Hunt','Same-game pairs that clear the hunt bar ($1.06+ per $1), one per player, paid at a 2-pick 3x']];
+ ['mlook','Prop looks vs market',''],['stale','Stale lines','A book behind the rest, priced at the books’ consensus: logged the first time it shows up, graded at that book’s price'],['smash','All Out Ambush','Due players at their recent-form line; due offenses at the market team total'],['pack','Pack Hunt','Paused Nov 22: no new picks until it is rebuilt. Same-game pairs that cleared the hunt bar ($1.06+ per $1), one per player, paid at a 2-pick 3x']];
 const RES={win:['good','Hit'],loss:['bad','Miss'],push:['','Push'],void:['','Void']};
 /* line movement as a model input (linemove.py, Nov 20): prop looks won-lost by the way the line moved before kickoff; hub only */
 function moveCard(M){
