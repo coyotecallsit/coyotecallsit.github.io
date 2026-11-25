@@ -603,7 +603,8 @@ a.today.chalk{display:block;text-decoration:none;background:#6b4a2b;border-radiu
 .tgstamp{font:400 13px "Special Elite",monospace;color:#a3301f;border:2px solid #a3301f;padding:1px 7px;transform:rotate(-6deg)}
 .breaking a{color:#2a2118;font:400 15px/1.45 "Special Elite",monospace;text-transform:uppercase;text-decoration:none}
 .breaking a:hover{text-decoration:underline}
-.breaking .stop{font:400 15px "Special Elite",monospace;color:#2a2118}
+.breaking .stop{margin-left:.55em;font:400 11px "Special Elite",monospace;letter-spacing:.14em;color:#a3301f;opacity:.6;white-space:nowrap;vertical-align:1px}
+.breaking .stop::before{content:"\2014\00a0"}
 .breaking .bmeta{color:#5f5244}
 .breaking .bmove{color:#8b2e1f}
 .breaking .bk.dev{color:#5f5244}
@@ -1280,10 +1281,10 @@ function bkMove(m){ if(m.before==null||m.after==null||Math.abs(m.after-m.before)
 function breakingStrip(){
   const all=bkItems(48), B=all.filter(x=>x.kind!=='lead').slice(0,4), D=all.filter(x=>x.kind==='lead').slice(0,3); if(!B.length&&!D.length) return '';
   const shown=new Set();
-  const dev=D.length?`<span class="bk dev">Developing · not confirmed</span><ul class="devl">${D.map(x=>`<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="stop"> STOP.</span><span class="bmeta">${esc(x.source||'')}${x.source?' · ':''}${ago(x.found)} · not confirmed yet</span></li>`).join('')}</ul>`:'';
+  const dev=D.length?`<span class="bk dev">Developing · not confirmed</span><ul class="devl">${D.map(x=>`<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="stop" aria-hidden="true">STOP</span><span class="bmeta">${esc(x.source||'')}${x.source?' · ':''}${ago(x.found)} · not confirmed yet</span></li>`).join('')}</ul>`:'';
   if(!B.length) return `<section class="breaking" aria-label="Developing news"><div class="tghead"><span class="tgco">COYOTE CALLS TELEGRAPH CO.</span></div>${dev}</section>`;
   return `<section class="breaking" aria-label="Breaking news"><div class="tghead"><span class="tgco">COYOTE CALLS TELEGRAPH CO.</span><span class="tgstamp">BREAKING</span></div><ul>${B.map(x=>{ const mv=(x.games||[]).filter(m=>!shown.has(m.game_id)&&(shown.add(m.game_id),true)).map(bkMove).filter(Boolean);
-    return `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="stop"> STOP.</span><span class="bmeta">${esc(x.source||'')}${x.source?' · ':''}${ago(x.found)}</span>${mv.map(t=>`<span class="bmove">${esc(t)}</span>`).join('')}</li>`; }).join('')}</ul>${dev}</section>`;
+    return `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a><span class="stop" aria-hidden="true">STOP</span><span class="bmeta">${esc(x.source||'')}${x.source?' · ':''}${ago(x.found)}</span>${mv.map(t=>`<span class="bmove">${esc(t)}</span>`).join('')}</li>`; }).join('')}</ul>${dev}</section>`;
 }
 /* posted on X: every pick the X account posted, graded like the model's (Record & About, and a strip on The Prowl) */
 const XKIND={safest:'Safest Slip',howl:'Biggest Howl',ambush:'All Out Ambush',pack:'Pack Hunt',personal:'Personal pick'}, XURL='https://x.com/CoyotesCalls';
