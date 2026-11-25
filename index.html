@@ -1006,17 +1006,27 @@ const vary=(arr,seed)=>arr[Math.abs([...String(seed)].reduce((a,c)=>(a*31+c.char
 const dayName=iso=>iso?new Date(iso).toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'long'}):'';
 const SHORTSTAT={receptions:'rec',receiving_yards:'rec yds',rushing_yards:'rush yds',passing_yards:'pass yds',passing_tds:'pass TDs',fg_made:'FGs',kicking_points:'kick pts',
   pat_made:'XPs',rush_rec_yards:'rush+rec yds',pass_rush_yards:'pass+rush yds',carries:'carries',attempts:'pass att',completions:'comp',targets:'targets',passing_interceptions:'INTs'};
+/* holidays (Nov 25, the owner): Thanksgiving and Christmas get a slip and a howl per kickoff window, Black Friday is named for the day */
+const etNum=(iso,o)=>parseInt(new Date(iso).toLocaleString('en-US',{timeZone:'America/New_York',...o}),10);
+const holidayOf=iso=>{ if(!iso) return null; const m=etNum(iso,{month:'numeric'}), d=etNum(iso,{day:'numeric'}), wd=dayName(iso);
+  return m===11&&wd==='Thursday'&&d>=22&&d<=28?'Thanksgiving':m===11&&wd==='Friday'&&d>=23&&d<=29?'Black Friday':m===12&&d===25?'Christmas':null; };
+const HOL_SPLIT=new Set(['Thanksgiving','Christmas']), HOLTAG={Thanksgiving:'#Thanksgiving','Black Friday':'#BlackFriday',Christmas:'#Christmas'};
+const kickWindow=iso=>{ const h=etNum(iso,{hour:'numeric',hourCycle:'h23'}); return h>=19?'Night':h>=15?'Late':'Early'; };
 function nextDayGames(){
   const now=new Date(), day=iso=>new Date(iso).toLocaleDateString('en-US',{timeZone:'America/New_York'});
   const up=(S.d.slate?.games||[]).filter(g=>g.status==='upcoming'&&g.kickoff_utc&&new Date(g.kickoff_utc)>now).sort((a,b)=>a.kickoff_utc.localeCompare(b.kickoff_utc));
-  return up.length?up.filter(g=>day(g.kickoff_utc)===day(up[0].kickoff_utc)):[];
+  if(!up.length) return []; const f=up[0].kickoff_utc, split=HOL_SPLIT.has(holidayOf(f));
+  return up.filter(g=>day(g.kickoff_utc)===day(f)&&(!split||kickWindow(g.kickoff_utc)===kickWindow(f)));
 }
 function slotName(gs){
-  const g=gs[gs.length-1], d=new Date(g.kickoff_utc), wd=d.toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'long'});
+  const g=gs[gs.length-1], d=new Date(g.kickoff_utc), wd=d.toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'long'}), hol=holidayOf(g.kickoff_utc);
+  if(hol) return HOL_SPLIT.has(hol)?`${hol} ${kickWindow(g.kickoff_utc)}`:hol;   // Thanksgiving Early / Late / Night, Black Friday
   const hr=parseInt(d.toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hourCycle:'h23'}),10);
   return gs.length===1&&hr>=19?({Thursday:'TNF',Sunday:'SNF',Monday:'MNF'}[wd]||wd):wd;
 }
-const HTAG=gs=>{ const t=gs&&gs.length?slotName(gs):''; return '#NFL'+(['TNF','SNF','MNF'].includes(t)?` #${t}`:''); };   // #NFL, plus the night tag on prime-time games
+const HTAG=gs=>{ const t=gs&&gs.length?slotName(gs):'', hol=Object.keys(HOLTAG).find(x=>t.startsWith(x));
+  if(hol) return `#NFL ${HOLTAG[hol]}`+(t.endsWith('Night')&&dayName(gs[gs.length-1].kickoff_utc)==='Thursday'?' #TNF':'');
+  return '#NFL'+(['TNF','SNF','MNF'].includes(t)?` #${t}`:''); };   // #NFL, plus the night tag on prime-time games
 function recordNote(){ const R=liveRecord(), n=R.w+R.l; return n>=20?`Live record ${R.w}–${R.l} (${pct(R.w/n,0)}). Every pick is logged before kickoff and graded in public.`:'Every pick is logged before kickoff and graded in public.'; }
 function slipLegs(gs,n){
   const ids=new Set(gs.map(g=>g.game_id)), c=[], hurt=(p,t)=>['Out','Doubtful'].includes(injOf(p,t)?.status);
@@ -1070,9 +1080,10 @@ function gradedSlipPost(){
   const call=h.result==='win'?vary([`All ${n} cashed 🎯 The pack eats.`,`Clean sweep 🎯 every leg hit.`],sd)
     :miss.length===1?vary([`One leg short. ${missTxt(miss[0])}. That one stings.`,`So close. ${missTxt(miss[0])}, and that was the only miss.`],sd)
     :`${hits} of ${n}. Not our night. ${miss.map(missTxt).join(', ')}.`;
-  const nd=nextDayGames()[0], next=nd?` Next slip drops ${dayName(nd.kickoff_utc)}.`:'';
+  const ngs=nextDayGames(), nd=ngs[0], next=nd?(holidayOf(nd.kickoff_utc)?` Next up: the ${slotName(ngs)} slip.`:` Next slip drops ${dayName(nd.kickoff_utc)}.`):'';
   const hG=(h.games||[]).map(slateGame).filter(Boolean), nt=/^(TNF|SNF|MNF) /.exec(h.title||'');
-  const hT=hG.length?HTAG(hG):nt?`#NFL #${nt[1]}`:HTAG(null);
+  const hh=Object.keys(HOLTAG).find(x=>(h.title||'').startsWith(x));
+  const hT=hG.length?HTAG(hG):nt?`#NFL #${nt[1]}`:hh?`#NFL ${HOLTAG[hh]}${/^Thanksgiving Night/.test(h.title)?' #TNF':''}`:HTAG(null);
   const head=`${h.result==='win'?`${n} for ${n}`:`${hits} of ${n}`} on the ${h.title}${h.matchup?` (${h.matchup})`:''} 🐺`;
   const post=fitPost([`${head}\n\n${lines}\n\n${call}\n\nPosted before kickoff, graded in public, win or lose.${next}\n${url}\n${hT}\n21+ · 1-800-GAMBLER`,
     `${head}\n\n${lines}\n\n${call}\nGraded in public, win or lose.\n${url}\n${hT}\n21+ · 1-800-GAMBLER`, `${head}\n\n${lines}\n\n${call} Graded in public.\n${url}\n${hT}\n21+ · 1-800-GAMBLER`,
@@ -1105,7 +1116,8 @@ function readyPosts(){
   const H=liveHowls().filter(h=>h.market_line!=null), hw=H.find(h=>ids.has(h.game_id)&&h.tag!=='Lean')||H.find(h=>ids.has(h.game_id))||H[0];
   if(hw){ const more=hw.dir_mkt==='more', side=v=>more?v:1-v, g=slateGame(hw.game_id), pick=`${more?'Over':'Under'} ${hw.market_line} ${hw.label.toLowerCase()}`;
     const lean=!hw.tag||hw.tag==='Lean', verdict=lean?`Not a slam dunk, but it's the biggest gap on the board.`:`The sims call it a ${hw.tag.toLowerCase()}.`, dn=dayName(g?.kickoff_utc||hw.kickoff);
-    const line1=`${dn?`${dn}'s `:''}Biggest Howl 🐺 ${hw.player} ${pick} (${hw.team} vs ${hw.opp})`, line2=`The books have it around ${pct(side(hw.market_p_over),0)}. The sims say ${pct(hw.p_mkt,0)}. ${verdict}`;
+    const hk=g?.kickoff_utc||hw.kickoff, hol=holidayOf(hk), hn=hol?hol+(HOL_SPLIT.has(hol)&&kickWindow(hk)==='Night'?' Night':''):'';
+    const line1=`${hn?`${hn} `:dn?`${dn}'s `:''}Biggest Howl 🐺 ${hw.player} ${pick} (${hw.team} vs ${hw.opp})`, line2=`The books have it around ${pct(side(hw.market_p_over),0)}. The sims say ${pct(hw.p_mkt,0)}. ${verdict}`;
     out.push({kind:'howl',title:'Biggest howl',at:g?.kickoff_utc||hw.kickoff||null,post:fitPost([`${line1}\n\n${line2}\n\n${gamePage(g)}\n${HTAG(g?[g]:null)}\n21+ · 1-800-GAMBLER`,`${line1}\n\n${line2}\n${gamePage(g)}\n21+`]),
       spec:{kicker:`Biggest howl · Week ${wk}`,teams:g?[g.away,g.home]:null,when:etTime(hw.kickoff),title:hw.player,sub:`${hw.team} ${hw.pos} vs ${hw.opp} · ${hw.label}`,
         big:`${more?'More':'Less'} ${hw.market_line}`,tag:hw.tag||'Lean',stats:[['The market',pct(side(hw.market_p_over),0)],['Coyote Calls',pct(hw.p_mkt,0)],['Typical game',typTxt(hw.stat,hw.proj)]],
